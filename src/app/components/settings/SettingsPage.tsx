@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import FontSelector from './FontSelector';
 import { toast } from 'sonner';
 import { saveSettingsToStorage, loadSettingsFromStorage, UserSettings } from '../../../utils/settingsStorage';
@@ -13,17 +14,18 @@ import api from '../../services/api';
 
 type Section = 'profile' | 'preferences' | 'notifications' | 'privacy';
 
-const sections: { id: Section; icon: typeof Settings; label: string; desc: string }[] = [
-  { id: 'profile',       icon: User,    label: 'Profile',        desc: 'Name, institution' },
-  { id: 'preferences',   icon: Palette, label: 'Preferences',    desc: 'Analysis defaults, citation format' },
-  { id: 'notifications', icon: Bell,    label: 'Notifications',  desc: 'Alerts, digests, reminders' },
-  { id: 'privacy',       icon: Shield,  label: 'Privacy',        desc: 'Data sharing, export, deletion' },
+const sections: { id: Section; icon: typeof Settings; labelKey: string; descKey: string }[] = [
+  { id: 'profile',       icon: User,    labelKey: 'settings.section.profile',       descKey: 'settings.section.profile.desc' },
+  { id: 'preferences',   icon: Palette, labelKey: 'settings.section.preferences',   descKey: 'settings.section.preferences.desc' },
+  { id: 'notifications', icon: Bell,    labelKey: 'settings.section.notifications', descKey: 'settings.section.notifications.desc' },
+  { id: 'privacy',       icon: Shield,  labelKey: 'settings.section.privacy',       descKey: 'settings.section.privacy.desc' },
 ];
 
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [activeSection, setActiveSection] = useState<Section>('profile');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -86,8 +88,8 @@ export default function SettingsPage() {
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground text-xl">Settings</h1>
-              <p className="text-sm text-muted-foreground">Manage your account and preferences</p>
+              <h1 className="font-bold text-foreground text-xl">{t('settings.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('settings.subtitle')}</p>
             </div>
           </div>
           <button
@@ -95,7 +97,7 @@ export default function SettingsPage() {
             className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-sm font-medium rounded-lg transition-colors border border-border"
           >
             <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">Back to Home</span>
+            <span className="hidden sm:inline">{t('settings.backHome')}</span>
           </button>
         </div>
       </div>
@@ -118,8 +120,8 @@ export default function SettingsPage() {
                 >
                   <s.icon className="w-4 h-4 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-bold truncate">{s.label}</div>
-                    <div className="text-[11px] text-muted-foreground truncate">{s.desc}</div>
+                    <div className="text-sm font-bold truncate">{t(s.labelKey)}</div>
+                    <div className="text-[11px] text-muted-foreground truncate">{t(s.descKey)}</div>
                   </div>
                   {activeSection === s.id && <ChevronRight className="w-3.5 h-3.5 text-red-600 dark:text-red-600 flex-shrink-0" />}
                 </button>
@@ -140,7 +142,7 @@ export default function SettingsPage() {
                       : 'bg-card border border-border text-muted-foreground hover:bg-muted'
                   }`}
                 >
-                  <s.icon className="w-3.5 h-3.5" /> {s.label}
+                  <s.icon className="w-3.5 h-3.5" /> {t(s.labelKey)}
                 </button>
               ))}
             </div>
@@ -153,7 +155,7 @@ export default function SettingsPage() {
             {activeSection === 'profile' && (
               <div className="p-4 space-y-6">
                 <h2 className="font-bold text-foreground flex items-center gap-2">
-                  <User className="w-5 h-5 text-red-600" /> Profile
+                  <User className="w-5 h-5 text-red-600" /> {t('settings.section.profile')}
                 </h2>
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-700 rounded-full flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
@@ -174,7 +176,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-foreground mb-1">Full Name</label>
+                    <label className="block text-sm font-bold text-foreground mb-1">{t('settings.fullName')}</label>
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -182,7 +184,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-foreground mb-1">Institution</label>
+                    <label className="block text-sm font-bold text-foreground mb-1">{t('settings.institution')}</label>
                     <input
                       value={institution}
                       onChange={(e) => setInstitution(e.target.value)}
@@ -191,7 +193,7 @@ export default function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-foreground mb-1">Research Field</label>
+                    <label className="block text-sm font-bold text-foreground mb-1">{t('settings.researchField')}</label>
                     <input
                       value={researchField}
                       onChange={(e) => setResearchField(e.target.value)}
@@ -203,7 +205,7 @@ export default function SettingsPage() {
                   onClick={handleSave}
                   className="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-all active:scale-95"
                 >
-                  Save Changes
+                  {t('settings.saveChanges')}
                 </button>
               </div>
             )}
@@ -212,13 +214,13 @@ export default function SettingsPage() {
             {activeSection === 'preferences' && (
               <div className="p-4 space-y-6">
                 <h2 className="font-bold text-foreground flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-red-600" /> Preferences
+                  <Palette className="w-5 h-5 text-red-600" /> {t('settings.section.preferences')}
                 </h2>
 
                 {/* Font Selection */}
                 <div>
                   <label className="block text-sm font-bold text-foreground mb-3">
-                    Font Family
+                    {t('settings.fontFamily')}
                   </label>
                   <FontSelector />
                 </div>
@@ -226,7 +228,7 @@ export default function SettingsPage() {
                 {/* Citation Format */}
                 <div>
                   <label className="block text-sm font-bold text-foreground mb-3">
-                    Default Citation Format
+                    {t('settings.citationFormat')}
                   </label>
                   <div className="flex gap-3">
                     {(['APA', 'MLA', 'Chicago'] as const).map((fmt) => (
@@ -249,7 +251,7 @@ export default function SettingsPage() {
                 {/* Default Analysis Depth */}
                 <div>
                   <label className="block text-sm font-bold text-foreground mb-3">
-                    Default Analysis Depth
+                    {t('settings.analysisDepth')}
                   </label>
                   <div className="bg-muted border border-border rounded-xl p-4">
                     <div className="relative pt-6 pb-2">
@@ -260,9 +262,9 @@ export default function SettingsPage() {
                         className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-red-600"
                       />
                       <div className="absolute top-0 left-0 w-full flex justify-between text-[11px] font-bold text-muted-foreground px-1 uppercase tracking-wider">
-                        <span className={defaultDepth === 1 ? 'text-red-600' : ''}>Fast</span>
-                        <span className={defaultDepth === 2 ? 'text-red-600' : ''}>Regular</span>
-                        <span className={defaultDepth === 3 ? 'text-red-600' : ''}>Deep</span>
+                        <span className={defaultDepth === 1 ? 'text-red-600' : ''}>{t('settings.depth.fast')}</span>
+                        <span className={defaultDepth === 2 ? 'text-red-600' : ''}>{t('settings.depth.regular')}</span>
+                        <span className={defaultDepth === 3 ? 'text-red-600' : ''}>{t('settings.depth.deep')}</span>
                       </div>
                     </div>
                   </div>
@@ -270,7 +272,7 @@ export default function SettingsPage() {
 
                 {/* Theme */}
                 <div>
-                  <label className="block text-sm font-bold text-foreground mb-3">Appearance</label>
+                  <label className="block text-sm font-bold text-foreground mb-3">{t('settings.appearance')}</label>
                   <div className="flex gap-3">
                     <button
                       onClick={() => setTheme('dark')}
@@ -278,7 +280,7 @@ export default function SettingsPage() {
                         theme === 'dark' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-2' : 'border-border bg-card text-muted-foreground hover:border-muted hover:bg-muted'
                       }`}
                     >
-                      <Moon className="w-4 h-4" /> Dark
+                      <Moon className="w-4 h-4" /> {t('settings.theme.dark')}
                     </button>
                     <button
                       onClick={() => setTheme('light')}
@@ -286,7 +288,30 @@ export default function SettingsPage() {
                         theme === 'light' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-2' : 'border-border bg-card text-muted-foreground hover:border-muted hover:bg-muted'
                       }`}
                     >
-                      <Sun className="w-4 h-4" /> Light
+                      <Sun className="w-4 h-4" /> {t('settings.theme.light')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Language */}
+                <div>
+                  <label className="block text-sm font-bold text-foreground mb-3">{t('settings.language')}</label>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setLanguage('en')}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 ${
+                        language === 'en' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-2' : 'border-border bg-card text-muted-foreground hover:border-muted hover:bg-muted'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => setLanguage('he')}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 ${
+                        language === 'he' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-2' : 'border-border bg-card text-muted-foreground hover:border-muted hover:bg-muted'
+                      }`}
+                    >
+                      עברית
                     </button>
                   </div>
                 </div>
@@ -295,7 +320,7 @@ export default function SettingsPage() {
                   onClick={handleSave}
                   className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-foreground rounded-lg text-sm font-bold transition-all active:scale-95"
                 >
-                  Save Preferences
+                  {t('settings.savePreferences')}
                 </button>
               </div>
             )}
