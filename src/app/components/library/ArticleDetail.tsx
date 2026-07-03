@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import { ArrowLeft, MessageSquare, FileText, Users, Calendar, TrendingUp, Send, Download, Share2, BookOpen, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, MessageSquare, FileText, Users, Calendar, TrendingUp, Send, Download, Share2, BookOpen, Sparkles, Languages, Loader2 } from 'lucide-react';
 import { mockArticles, mockChatHistory, ChatMessage, Article } from '../../data/mockData';
 import { loadUploadedArticles } from '../../../utils/articleStore';
 import SinglePDFViewer from './SinglePDFViewer';
+import { getPaperTranslation, PaperTranslation } from '../../services/paperService';
+import { useLanguage } from '../../context/LanguageContext';
+import { toast } from 'sonner';
 
 interface ArticleDetailProps {
   articleId: string;
@@ -20,6 +23,10 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showPDF, setShowPDF] = useState(false);
+  const { language, t } = useLanguage();
+  const [translated, setTranslated] = useState<PaperTranslation | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   if (!article) {
     return (
@@ -65,6 +72,44 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
     }, 1500);
   };
 
+  const loadTranslation = async () => {
+    if (!article) return;
+    setTranslating(true);
+    try {
+      const data = await getPaperTranslation(article.id, 'he');
+      setTranslated(data);
+      setShowTranslated(true);
+    } catch (err) {
+      toast.error('Translation failed. Showing the original text.');
+      setShowTranslated(false);
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const toggleTranslation = () => {
+    if (showTranslated) {
+      setShowTranslated(false); // back to original — instant
+    } else if (translated) {
+      setShowTranslated(true);  // cached in component — instant
+    } else {
+      loadTranslation();        // first time — fetch
+    }
+  };
+
+  // When the whole UI is in Hebrew, default the reader to the translated view.
+  useEffect(() => {
+    if (language === 'he' && article && !translated && !translating) {
+      loadTranslation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, articleId]);
+
+  const view = showTranslated && translated
+    ? { title: translated.title, abstract: translated.abstract, methodology: translated.methodology, keyFindings: translated.keyFindings }
+    : { title: article.title, abstract: article.abstract, methodology: article.methodology, keyFindings: article.keyFindings };
+  const textDir = showTranslated && translated ? 'rtl' as const : undefined;
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -80,7 +125,7 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
 
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-slate-900 mb-4">{article.title}</h1>
+              <h1 dir={textDir} className="text-3xl font-bold text-slate-900 mb-4">{view.title}</h1>
 
               <div className="flex items-center gap-6 text-sm text-slate-600 mb-4">
                 <div className="flex items-center gap-2">
@@ -107,6 +152,14 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
             </div>
 
             <div className="flex gap-2">
+              <button
+                onClick={toggleTranslation}
+                disabled={translating}
+                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-60"
+              >
+                {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                {translating ? t('reader.translating') : showTranslated ? t('reader.showOriginal') : t('reader.translate')}
+              </button>
               <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
                 <Download className="w-4 h-4" />
                 Export
@@ -130,13 +183,13 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
                 <BookOpen className="w-5 h-5 text-emerald-600" />
                 Abstract
               </h3>
-              <p className="text-sm text-slate-700 leading-relaxed">{article.abstract}</p>
+              <p dir={textDir} className="text-sm text-slate-700 leading-relaxed">{view.abstract}</p>
             </div>
 
             {/* Methodology */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
               <h3 className="font-semibold text-slate-900 mb-3">Methodology</h3>
-              <p className="text-sm text-slate-700">{article.methodology}</p>
+              <p dir={textDir} className="text-sm text-slate-700">{view.methodology}</p>
             </div>
 
             {/* Key Findings */}
@@ -145,8 +198,8 @@ export default function ArticleDetail({ articleId, onNavigate }: ArticleDetailPr
                 <Sparkles className="w-5 h-5 text-emerald-600" />
                 Key Findings
               </h3>
-              <ul className="space-y-2">
-                {article.keyFindings.map((finding, index) => (
+              <ul dir={textDir} className="space-y-2">
+                {view.keyFindings.map((finding, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm text-slate-700">
                     <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full mt-2 flex-shrink-0"></span>
                     <span>{finding}</span>

@@ -96,3 +96,22 @@ export async function getSuggestionsForPapers(paperIds: string[], limit = 8): Pr
   return response.data;
 }
 
+export interface PaperTranslation {
+  title: string;
+  abstract: string;
+  methodology: string;
+  keyFindings: string[];
+}
+
+// Fetch (server-cached) Hebrew translation of a paper's readable text.
+export async function getPaperTranslation(id: string, lang: 'he' = 'he'): Promise<PaperTranslation> {
+  const response = await api.get(`/papers/${id}/translation`, { params: { lang } });
+  const d = response.data;
+  return {
+    title: d.title || '',
+    abstract: d.abstract || '',
+    methodology: d.methodology || '',
+    keyFindings: Array.isArray(d.keyFindings) ? d.keyFindings : [],
+  };
+}
+
