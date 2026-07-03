@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   Search, Filter, Upload, FileText, Calendar, Users, TrendingUp,
-  LayoutGrid, List, BookOpen, Star, ChevronDown, ChevronUp, Check, Sparkles, Trash2, Loader2, Home
+  LayoutGrid, List, BookOpen, Star, ChevronDown, ChevronUp, Check, Sparkles, Trash2, Loader2, Home, Languages
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Article } from '../../data/mockData';
-import { getPapers, uploadPaper, deletePaper, getSuggestions, PaperSuggestion } from '../../services/paperService';
+import { getPapers, uploadPaper, deletePaper, getSuggestions, PaperSuggestion, getPaperTranslation, PaperTranslation } from '../../services/paperService';
 import { toast } from 'sonner';
 import ArticleIcon from '../ui/ArticleIcon';
+import { useLanguage } from '../../context/LanguageContext';
 
 type ViewMode = 'grid' | 'list';
 const TARGET_SUGGESTIONS = 10;
@@ -20,6 +21,10 @@ type SuggestionBundle = {
 
 export default function Library() {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
+  const [translations, setTranslations] = useState<Record<string, PaperTranslation>>({});
+  const [showTranslated, setShowTranslated] = useState<Record<string, boolean>>({});
+  const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
   const [articles, setArticles] = useState<Article[]>([]);
@@ -193,6 +198,33 @@ export default function Library() {
       toast.error('Failed to delete paper');
     }
   };
+
+  // Toggle the Hebrew translation of a paper's readable text in the reader.
+  // Cached per-article id so switching cards never shows a stale translation.
+  const toggleTranslation = async (article: Article) => {
+    const id = article.id;
+    if (showTranslated[id]) { setShowTranslated((p) => ({ ...p, [id]: false })); return; }
+    if (translations[id]) { setShowTranslated((p) => ({ ...p, [id]: true })); return; }
+    setTranslatingId(id);
+    try {
+      const data = await getPaperTranslation(id, 'he');
+      setTranslations((p) => ({ ...p, [id]: data }));
+      setShowTranslated((p) => ({ ...p, [id]: true }));
+    } catch {
+      toast.error('Translation failed. Showing the original text.');
+    } finally {
+      setTranslatingId(null);
+    }
+  };
+
+  // When the UI is in Hebrew, auto-load the translation for the expanded paper.
+  useEffect(() => {
+    if (language !== 'he' || !expandedId) return;
+    if (translations[expandedId] || showTranslated[expandedId] || translatingId === expandedId) return;
+    const article = articles.find((a) => a.id === expandedId);
+    if (article) toggleTranslation(article);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, expandedId]);
 
   return (
     <div className="flex-1 overflow-y-auto bg-muted">
@@ -385,19 +417,50 @@ export default function Library() {
                       <span>Auto-Summary</span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
-                    {isExpanded && (
-                      <div className="space-y-3 mt-2 border-t border-border pt-3">
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                          {(() => {
+                    {isExpanded && (() => {
+                      const tr = showTranslated[article.id] ? translations[article.id] : null;
+                      const dir = tr ? ('rtl' as const) : undefined;
+                      const summary = tr
+                        ? tr.abstract
+                        : (() => {
                             const a = article.abstract?.trim();
                             if (a && a.length > 0) {
                               return a.split('.').slice(0, 2).join('. ') + (a.split('.').length > 2 ? '…' : '');
                             }
                             return article.keyFindings?.slice(0, 2).join('; ') || 'No summary available.';
-                          })()}
-                        </p>
-                      </div>
-                    )}
+                          })();
+                      return (
+                        <div className="space-y-3 mt-2 border-t border-border pt-3">
+                          <div className="flex justify-end">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleTranslation(article); }}
+                              disabled={translatingId === article.id}
+                              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-60"
+                            >
+                              {translatingId === article.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : <Languages className="w-3 h-3" />}
+                              {translatingId === article.id
+                                ? t('reader.translating')
+                                : showTranslated[article.id]
+                                  ? t('reader.showOriginal')
+                                  : t('reader.translate')}
+                            </button>
+                          </div>
+                          <p dir={dir} className="text-xs text-muted-foreground leading-relaxed">{summary}</p>
+                          {tr && tr.methodology && (
+                            <p dir={dir} className="text-xs text-muted-foreground leading-relaxed">
+                              <span className="font-bold">מתודולוגיה: </span>{tr.methodology}
+                            </p>
+                          )}
+                          {tr && tr.keyFindings && tr.keyFindings.length > 0 && (
+                            <ul dir={dir} className="text-xs text-muted-foreground leading-relaxed list-disc pr-4 space-y-1">
+                              {tr.keyFindings.map((f, i) => (<li key={i}>{f}</li>))}
+                            </ul>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Delete button for each article */}
                     <div className="mt-3 flex justify-end">
