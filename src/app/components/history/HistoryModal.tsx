@@ -1,5 +1,6 @@
 ﻿import { X, Clock, FileText } from 'lucide-react';
 import { ChatMessage, Article } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface HistoryModalProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface HistoryModalProps {
 }
 
 export default function HistoryModal({ onClose, messages, selectedArticles }: HistoryModalProps) {
+  const { t } = useLanguage();
   return (
     <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-card w-full max-w-3xl max-h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
@@ -18,8 +20,8 @@ export default function HistoryModal({ onClose, messages, selectedArticles }: Hi
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-bold text-foreground">Analysis History & Statistics</h2>
-              <p className="text-xs text-muted-foreground">Review past queries and AI responses</p>
+              <h2 className="font-bold text-foreground">{t('history.modalTitle')}</h2>
+              <p className="text-xs text-muted-foreground">{t('history.modalSubtitle')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -31,27 +33,27 @@ export default function HistoryModal({ onClose, messages, selectedArticles }: Hi
           
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Queries</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{t('history.totalQueries')}</span>
               <span className="text-2xl font-bold text-foreground">{messages.length}</span>
             </div>
             <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Articles Analyzed</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{t('history.articlesAnalyzed')}</span>
               <span className="text-2xl font-bold text-foreground">{selectedArticles.length}</span>
             </div>
             <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Time Saved</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">{t('history.timeSaved')}</span>
               <span className="text-2xl font-bold text-green-600">~{messages.length * 45}m</span>
             </div>
           </div>
 
           <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
             <FileText className="w-4 h-4 text-muted-foreground" />
-            Query Log
+            {t('history.queryLog')}
           </h3>
 
           {messages.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-muted-foreground font-medium">No history recorded yet.</p>
+              <p className="text-muted-foreground font-medium">{t('history.noHistory')}</p>
             </div>
           ) : (
             <div className="space-y-4">

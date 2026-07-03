@@ -6,6 +6,7 @@ import {
   LineChart, Line, Legend
 } from 'recharts';
 import { Article, ChatMessage } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Props {
   studentName: string;
@@ -18,6 +19,7 @@ interface Props {
 export default function StudentPerformancePanel({
   studentName, articles, messages, analyzedIds, perArticleComprehension,
 }: Props) {
+  const { t } = useLanguage();
   // Metrics
   const totalQuestions = messages.length;
   const analyzedCount = analyzedIds.size;
@@ -74,10 +76,10 @@ export default function StudentPerformancePanel({
   }, [messages]);
 
   const stats = [
-    { label: 'Avg Comprehension', value: `${avgComprehension}%`, icon: TrendingUp, accent: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' },
-    { label: 'Questions Asked', value: totalQuestions, icon: MessageSquare, accent: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-    { label: 'Papers Analyzed', value: analyzedCount, icon: BookOpen, accent: 'text-red-600 bg-red-50 dark:bg-red-900/30' },
-    { label: 'Topics Engaged', value: topicCoverage.filter(t => t.score > 0).length, icon: Layers, accent: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' },
+    { label: t('dashboard.avgComprehension'), value: `${avgComprehension}%`, icon: TrendingUp, accent: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' },
+    { label: t('dashboard.questionsAsked'), value: totalQuestions, icon: MessageSquare, accent: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
+    { label: t('dashboard.papersAnalyzed'), value: analyzedCount, icon: BookOpen, accent: 'text-red-600 bg-red-50 dark:bg-red-900/30' },
+    { label: t('dashboard.topicsEngaged'), value: topicCoverage.filter(topic => topic.score > 0).length, icon: Layers, accent: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' },
   ];
 
   return (
@@ -87,8 +89,8 @@ export default function StudentPerformancePanel({
           <Activity className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="font-bold text-foreground">{studentName} — Performance</h2>
-          <p className="text-xs text-muted-foreground">Comprehension, engagement, and topic coverage from chat activity</p>
+          <h2 className="font-bold text-foreground">{studentName} — {t('dashboard.performance')}</h2>
+          <p className="text-xs text-muted-foreground">{t('dashboard.performanceDesc')}</p>
         </div>
       </div>
 
@@ -106,7 +108,7 @@ export default function StudentPerformancePanel({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-muted/40 border border-border rounded-xl p-4">
-          <h3 className="text-sm font-bold text-foreground mb-3">Comprehension per Paper</h3>
+          <h3 className="text-sm font-bold text-foreground mb-3">{t('dashboard.comprehensionPerPaper')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={articleData} margin={{ top: 5, right: 5, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -122,13 +124,13 @@ export default function StudentPerformancePanel({
         </div>
 
         <div className="bg-muted/40 border border-border rounded-xl p-4">
-          <h3 className="text-sm font-bold text-foreground mb-3">Topic Coverage</h3>
+          <h3 className="text-sm font-bold text-foreground mb-3">{t('dashboard.topicCoverage')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <RadarChart data={topicCoverage}>
               <PolarGrid className="stroke-border" />
               <PolarAngleAxis dataKey="topic" tick={{ fontSize: 10 }} />
               <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fontSize: 9 }} />
-              <Radar name="Engagement" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} strokeWidth={2} />
+              <Radar name={t('dashboard.engagement')} dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} strokeWidth={2} />
               <Tooltip formatter={(v: number) => `${v}%`} contentStyle={{ fontSize: 12, borderRadius: 8 }} />
             </RadarChart>
           </ResponsiveContainer>
@@ -136,7 +138,7 @@ export default function StudentPerformancePanel({
       </div>
 
       <div className="bg-muted/40 border border-border rounded-xl p-4">
-        <h3 className="text-sm font-bold text-foreground mb-3">Last 7 Days Activity</h3>
+        <h3 className="text-sm font-bold text-foreground mb-3">{t('dashboard.last7DaysActivity')}</h3>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={activity} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />

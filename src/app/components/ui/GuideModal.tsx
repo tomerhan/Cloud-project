@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   X, BookOpen, MessageSquare, BarChart2, ChevronRight, UploadCloud, Search, CheckCircle2, FileText
 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface GuideModalProps {
   isOpen: boolean;
@@ -12,13 +13,14 @@ type TabType = 'library' | 'chat' | 'analyzer';
 
 export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('library');
+  const { t } = useLanguage();
 
   if (!isOpen) return null;
 
   const tabs: { id: TabType; icon: React.ElementType; label: string }[] = [
-    { id: 'library', icon: BookOpen, label: 'Library & Upload' },
-    { id: 'chat', icon: MessageSquare, label: 'Socratic Chat' },
-    { id: 'analyzer', icon: BarChart2, label: 'Chat Analyzer' },
+    { id: 'library', icon: BookOpen, label: t('guide.tabLibrary') },
+    { id: 'chat', icon: MessageSquare, label: t('guide.tabChat') },
+    { id: 'analyzer', icon: BarChart2, label: t('guide.tabAnalyzer') },
   ];
 
   return (
@@ -37,8 +39,8 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Welcome to ResearchAI</h2>
-              <p className="text-sm text-muted-foreground">Quick Guide & Walkthrough</p>
+              <h2 className="text-xl font-bold text-foreground">{t('guide.welcomeTitle')}</h2>
+              <p className="text-sm text-muted-foreground">{t('guide.subtitle')}</p>
             </div>
           </div>
           <button 
@@ -82,31 +84,31 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <UploadCloud className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Building Your Library</h3>
-                    <p className="text-muted-foreground">Upload and manage your academic papers.</p>
+                    <h3 className="text-xl font-bold text-foreground">{t('guide.libraryTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guide.libraryDesc')}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">1</div>
                     <div>
-                      <h4 className="font-bold text-foreground">Upload a PDF</h4>
-                      <p className="text-sm text-muted-foreground mt-1">Navigate to the <strong>Library</strong> section and click the upload button to add a new academic paper (.pdf format).</p>
+                      <h4 className="font-bold text-foreground">{t('guide.step1Title')}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step1Pre')}<strong>{t('guide.step1Bold')}</strong>{t('guide.step1Post')}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">2</div>
                     <div>
-                      <h4 className="font-bold text-foreground">Automatic Parsing</h4>
-                      <p className="text-sm text-muted-foreground mt-1">The system will automatically extract the title, abstract, and text from the PDF using advanced parsing techniques.</p>
+                      <h4 className="font-bold text-foreground">{t('guide.step2Title')}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step2Desc')}</p>
                     </div>
                   </div>
                   <div className="flex gap-4">
                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">3</div>
                     <div>
-                      <h4 className="font-bold text-foreground">Manage Library</h4>
-                      <p className="text-sm text-muted-foreground mt-1">View all your uploaded papers, search through them, and prepare them for chat or deep analysis.</p>
+                      <h4 className="font-bold text-foreground">{t('guide.step3Title')}</h4>
+                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step3Desc')}</p>
                     </div>
                   </div>
                 </div>
@@ -120,33 +122,33 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <MessageSquare className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Socratic Chat</h3>
-                    <p className="text-muted-foreground">Engage in a guided dialogue to deepen your understanding.</p>
+                    <h3 className="text-xl font-bold text-foreground">{t('guide.chatSectionTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guide.chatSectionDesc')}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="bg-card border border-border p-4 rounded-xl flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
-                    <p className="text-sm text-foreground"><strong>Goal:</strong> The AI acts as a mentor, guiding you to understand the paper rather than just giving you the answers directly.</p>
+                    <p className="text-sm text-foreground"><strong>{t('guide.goalLabel')}</strong> {t('guide.goalText')}</p>
                   </div>
-                  
+
                   <ul className="space-y-3">
                     <li className="flex gap-3 text-sm text-muted-foreground">
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>Select a paper from the main screen to begin a chat session.</span>
+                      <span>{t('guide.chatItem1')}</span>
                     </li>
                     <li className="flex gap-3 text-sm text-muted-foreground">
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>Ask questions about the methodology, results, or concepts in the paper.</span>
+                      <span>{t('guide.chatItem2')}</span>
                     </li>
                     <li className="flex gap-3 text-sm text-muted-foreground">
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>The AI will respond with probing questions (Socratic method) to help you think critically about the material.</span>
+                      <span>{t('guide.chatItem3')}</span>
                     </li>
                     <li className="flex gap-3 text-sm text-muted-foreground">
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>If you get stuck, you can ask for hints or a direct explanation.</span>
+                      <span>{t('guide.chatItem4')}</span>
                     </li>
                   </ul>
                 </div>

@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { getPapers } from '../../services/paperService';
 import { getUserChats, deleteChat } from '../../services/chatService';
+import { useLanguage } from '../../context/LanguageContext';
 
 const TYPE_ICONS: Record<AnalysisSession['type'], typeof GitCompare> = {
   comparison: GitCompare,
@@ -23,6 +24,7 @@ const TYPE_COLORS: Record<AnalysisSession['type'], string> = {
 
 export default function HistoryPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [sessions, setSessions] = useState<AnalysisSession[]>(() => {
     try {
@@ -116,10 +118,10 @@ export default function HistoryPage() {
         await deleteChat(id);
       }
       setSessions((prev) => prev.filter((s) => s.id !== id));
-      toast.success('Session deleted');
+      toast.success(t('history.sessionDeleted'));
     } catch (err) {
       console.error('Failed to delete session:', err);
-      toast.error('Failed to delete session from server');
+      toast.error(t('history.deleteFailed'));
     }
   };
 
@@ -138,8 +140,8 @@ export default function HistoryPage() {
               <History className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground text-xl">Chat History</h1>
-              <p className="text-sm text-muted-foreground">Your past research sessions and analyses</p>
+              <h1 className="font-bold text-foreground text-xl">{t('history.title')}</h1>
+              <p className="text-sm text-muted-foreground">{t('history.subtitle')}</p>
             </div>
           </div>
           <button
@@ -147,7 +149,7 @@ export default function HistoryPage() {
             className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-sm font-medium rounded-lg transition-colors border border-border"
           >
             <Home className="w-4 h-4" />
-            <span className="hidden sm:inline">Back to Home</span>
+            <span className="hidden sm:inline">{t('history.backToHome')}</span>
           </button>
         </div>
       </div>
@@ -157,10 +159,10 @@ export default function HistoryPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Sessions', value: stats.total, icon: History, color: 'text-red-600' },
-            { label: 'Comparisons', value: stats.comparisons, icon: GitCompare, color: 'text-purple-600' },
-            { label: 'Chat Sessions', value: stats.chats, icon: MessageSquare, color: 'text-blue-600' },
-            { label: 'Articles Used', value: stats.articles, icon: BookOpen, color: 'text-emerald-600' },
+            { label: t('history.totalSessions'), value: stats.total, icon: History, color: 'text-red-600' },
+            { label: t('history.comparisons'), value: stats.comparisons, icon: GitCompare, color: 'text-purple-600' },
+            { label: t('history.chatSessions'), value: stats.chats, icon: MessageSquare, color: 'text-blue-600' },
+            { label: t('history.articlesUsed'), value: stats.articles, icon: BookOpen, color: 'text-emerald-600' },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-card border border-border rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-2">
@@ -177,7 +179,7 @@ export default function HistoryPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search sessions by name…"
+            placeholder={t('history.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-card border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent shadow-sm"
@@ -188,13 +190,13 @@ export default function HistoryPage() {
         {filtered.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-12 text-center shadow-sm">
             <History className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-bold text-foreground mb-1">No sessions found</h3>
-            <p className="text-sm text-muted-foreground">Start a new research chat to create history.</p>
+            <h3 className="font-bold text-foreground mb-1">{t('history.noSessionsFound')}</h3>
+            <p className="text-sm text-muted-foreground">{t('history.startNewChat')}</p>
             <button
               onClick={() => navigate('/')}
               className="mt-4 px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
             >
-              Go to Research Chat
+              {t('history.goToResearchChat')}
             </button>
           </div>
         ) : (
@@ -210,7 +212,7 @@ export default function HistoryPage() {
                           <MessageSquare className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-foreground truncate">{article ? article.title : 'Chat'}</h3>
+                          <h3 className="font-bold text-foreground truncate">{article ? article.title : t('history.chatFallback')}</h3>
                           <p className="text-xs text-muted-foreground mt-1">{new Date(msg.timestamp).toLocaleString()}</p>
                           {/* Preview removed per user request */}
                         </div>
@@ -220,7 +222,7 @@ export default function HistoryPage() {
                           onClick={() => resumeFromMessage(msg)}
                           className="px-4 py-2 bg-card hover:bg-slate-100 dark:hover:bg-slate-700 text-foreground rounded-lg text-xs font-bold transition-colors"
                         >
-                          Resume Session →
+                          {t('history.resumeSession')}
                         </button>
                       </div>
                     </div>
@@ -254,17 +256,17 @@ export default function HistoryPage() {
                                         setSessions((prev) => prev.map((s) => s.id === session.id ? { ...s, name: editingName || s.name } : s));
                                         setEditingSessionId(null);
                                         setEditingName('');
-                                        toast.success('Session name updated');
+                                        toast.success(t('history.nameUpdated'));
                                       }}
                                       className="p-2 text-green-600 hover:text-green-700"
-                                      title="Save"
+                                      title={t('history.saveTitle')}
                                     >
                                       <Check className="w-4 h-4" />
                                     </button>
                                     <button
                                       onClick={() => { setEditingSessionId(null); setEditingName(''); }}
                                       className="p-2 text-muted-foreground hover:text-slate-700"
-                                      title="Cancel"
+                                      title={t('history.cancelTitle')}
                                     >
                                       <X className="w-4 h-4" />
                                     </button>
@@ -275,7 +277,7 @@ export default function HistoryPage() {
                                     <button
                                       onClick={() => { setEditingSessionId(session.id); setEditingName(session.name); }}
                                       className="p-1 text-muted-foreground hover:text-foreground"
-                                      title="Edit name"
+                                      title={t('history.editNameTitle')}
                                     >
                                       <Edit className="w-4 h-4" />
                                     </button>
@@ -293,7 +295,7 @@ export default function HistoryPage() {
                               </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                                 <FileText className="w-3.5 h-3.5" />
-                                {articles.length} article{articles.length !== 1 && 's'}
+                                {articles.length} {articles.length === 1 ? t('history.articleSingular') : t('history.articlePlural')}
                               </div>
                               <div className="flex flex-wrap gap-2 text-xs">
                                 {articles.slice(0, 6).map((a) => (
@@ -302,7 +304,7 @@ export default function HistoryPage() {
                                   </span>
                                 ))}
                                 {articles.length > 6 && (
-                                  <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">+{articles.length - 6} more</span>
+                                  <span className="px-2 py-1 bg-muted text-muted-foreground rounded-full border border-border">+{articles.length - 6} {t('history.moreSuffix')}</span>
                                 )}
                               </div>
                             </div>
@@ -310,19 +312,19 @@ export default function HistoryPage() {
 
                           <div className="flex items-center gap-2">
                             <div className="text-sm text-muted-foreground">
-                              <span>{articles.length} article{articles.length !== 1 ? 's' : ''}</span>
+                              <span>{articles.length} {articles.length === 1 ? t('history.articleSingular') : t('history.articlePlural')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => resumeFromSession(session)}
                                 className="px-3 py-2 bg-card hover:bg-slate-100 dark:hover:bg-slate-700 text-foreground rounded-lg text-xs font-bold transition-colors border border-border"
                               >
-                                Resume Session →
+                                {t('history.resumeSession')}
                               </button>
                               <button
                                 onClick={() => deleteSession(session.id)}
                                 className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
-                                title="Delete session"
+                                title={t('history.deleteSessionTitle')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

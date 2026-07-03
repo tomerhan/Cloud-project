@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { Users, FileText, Search, ArrowRight, BookOpen, LogOut, Sparkles, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
 
 interface Student {
@@ -18,6 +19,7 @@ interface Student {
 export default function LecturerDashboard() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
@@ -111,8 +113,8 @@ export default function LecturerDashboard() {
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-foreground text-xl leading-tight">Lecturer Dashboard</h1>
-            <p className="text-xs text-muted-foreground">Welcome back, {user?.name || 'Professor'}</p>
+            <h1 className="font-bold text-foreground text-xl leading-tight">{t('dashboard.lecturerTitle')}</h1>
+            <p className="text-xs text-muted-foreground">{t('dashboard.welcomeBack')} {user?.name || t('dashboard.professorFallback')}</p>
           </div>
         </div>
 
@@ -121,7 +123,7 @@ export default function LecturerDashboard() {
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 hover:shadow-lg hover:scale-105 rounded-lg transition-all"
         >
           <LogOut className="w-4 h-4" />
-          Sign Out
+          {t('dashboard.signOut')}
         </button>
       </header>
 
@@ -136,34 +138,34 @@ export default function LecturerDashboard() {
                 {/* Font Size */}
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    Font Size
+                    {t('dashboard.fontSize')}
                   </label>
                   <select
                     value={fontSize}
                     onChange={handleFontSizeChange}
                     className="px-2 py-1 text-sm border border-input rounded bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-transparent transition-all"
                   >
-                    <option value="small">Small</option>
-                    <option value="medium">Medium</option>
-                    <option value="large">Large</option>
-                    <option value="extra-large">Extra Large</option>
+                    <option value="small">{t('dashboard.fontSizeSmall')}</option>
+                    <option value="medium">{t('dashboard.fontSizeMedium')}</option>
+                    <option value="large">{t('dashboard.fontSizeLarge')}</option>
+                    <option value="extra-large">{t('dashboard.fontSizeExtraLarge')}</option>
                   </select>
                 </div>
 
                 {/* Font Family */}
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    Font Family
+                    {t('dashboard.fontFamily')}
                   </label>
                   <select
                     value={fontFamily}
                     onChange={handleFontFamilyChange}
                     className="px-2 py-1 text-sm border border-input rounded bg-background text-foreground focus:ring-1 focus:ring-ring focus:border-transparent transition-all"
                   >
-                    <option value="system">Default</option>
-                    <option value="sans-serif">Sans Serif</option>
-                    <option value="serif">Serif</option>
-                    <option value="monospace">Monospace</option>
+                    <option value="system">{t('dashboard.fontFamilyDefault')}</option>
+                    <option value="sans-serif">{t('dashboard.fontFamilySansSerif')}</option>
+                    <option value="serif">{t('dashboard.fontFamilySerif')}</option>
+                    <option value="monospace">{t('dashboard.fontFamilyMonospace')}</option>
                   </select>
                 </div>
 
@@ -171,7 +173,7 @@ export default function LecturerDashboard() {
                 <button
                   onClick={handleThemeToggle}
                   className="px-3 py-1 text-sm border border-input rounded bg-background text-foreground hover:bg-muted hover:border-ring focus:ring-1 focus:ring-ring focus:border-transparent transition-all flex items-center gap-1"
-                  title="Display Mode"
+                  title={t('dashboard.displayMode')}
                 >
                   {theme === 'dark' ? (
                     <Sun className="w-3 h-3 text-red-600" />
@@ -190,7 +192,7 @@ export default function LecturerDashboard() {
                 <Users className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.totalStudents')}</p>
                 <h2 className="text-2xl font-bold text-foreground">{students.length}</h2>
               </div>
             </div>
@@ -200,7 +202,7 @@ export default function LecturerDashboard() {
                 <FileText className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Papers Analyzed</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.totalPapersAnalyzed')}</p>
                 <h2 className="text-2xl font-bold text-foreground">
                   {students.reduce((acc, curr) => acc + curr.papersAnalyzed, 0)}
                 </h2>
@@ -226,7 +228,7 @@ export default function LecturerDashboard() {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Projects</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('dashboard.activeProjects')}</p>
                 <h2 className="text-2xl font-bold text-foreground">{students.filter(s => s.status === 'Active').length}</h2>
               </div>
             </div>
@@ -236,8 +238,8 @@ export default function LecturerDashboard() {
           <section className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
             <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-lg font-bold text-foreground">Student Projects</h2>
-                <p className="text-sm text-muted-foreground">Monitor progress and review analyzed research</p>
+                <h2 className="text-lg font-bold text-foreground">{t('dashboard.studentProjects')}</h2>
+                <p className="text-sm text-muted-foreground">{t('dashboard.monitorProgress')}</p>
               </div>
 
               {/* Search Box */}
@@ -245,7 +247,7 @@ export default function LecturerDashboard() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="Search by student or project..."
+                  placeholder={t('dashboard.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-muted border border-border rounded-xl text-sm focus:ring-2 focus:ring-red-500 outline-none transition-all"
@@ -261,7 +263,7 @@ export default function LecturerDashboard() {
                 </div>
               ) : filteredStudents.length === 0 ? (
                 <div className="p-10 text-center text-muted-foreground">
-                  No students found matching your search.
+                  {t('dashboard.noStudentsFound')}
                 </div>
               ) : (
                 filteredStudents.map((student) => (
@@ -280,9 +282,9 @@ export default function LecturerDashboard() {
                     <div className="flex-1 md:px-10">
                       <p className="text-sm font-semibold text-foreground">{student.project}</p>
                       <p className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                        <FileText className="w-3 h-3" /> {student.papersAnalyzed} papers analyzed
+                        <FileText className="w-3 h-3" /> {student.papersAnalyzed} {t('dashboard.papersAnalyzedSuffix')}
                         <span className="text-border mx-1">|</span>
-                        Last active: {student.lastActive}
+                        {t('dashboard.lastActive')} {student.lastActive}
                       </p>
                     </div>
 
@@ -299,7 +301,7 @@ export default function LecturerDashboard() {
                         onClick={() => navigate(`/student/${student.id}`)}
                         className="flex items-center gap-4 px-6 py-5 rounded-xl transition-all text-left border-2 border-slate-300 bg-slate-50 dark:bg-slate-700 text-foreground dark:border-slate-400 hover:bg-red-600 hover:text-white hover:border-red-500 hover:shadow-xl hover:scale-105"
                       >
-                        View Work <ArrowRight className="w-4 h-4" />
+                        {t('dashboard.viewWork')} <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
 
