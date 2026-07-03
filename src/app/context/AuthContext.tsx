@@ -10,6 +10,9 @@ export interface User {
   profilePicture?: string;
   firebaseUid?: string;
   institution?: string;
+  researchField?: string;
+  citationFormat?: 'APA' | 'MLA' | 'Chicago';
+  defaultDepth?: 1 | 2 | 3;
 }
 
 interface AuthContextType {

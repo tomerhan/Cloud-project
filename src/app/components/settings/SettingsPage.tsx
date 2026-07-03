@@ -42,9 +42,10 @@ export default function SettingsPage() {
     setName(user?.name || settings.name || '');
     setEmail(user?.email || settings.email || '');
     setInstitution(user?.institution || settings.institution || '');
-    setResearchField(settings.researchField);
-    setCitationFormat(settings.citationFormat);
-    setDefaultDepth(settings.defaultDepth);
+    // Preferences now persist in the DB; fall back to localStorage for older data.
+    setResearchField(user?.researchField ?? settings.researchField);
+    setCitationFormat(user?.citationFormat ?? settings.citationFormat);
+    setDefaultDepth(user?.defaultDepth ?? settings.defaultDepth);
     setEmailDigest(settings.emailDigest);
     setAnalysisAlerts(settings.analysisAlerts);
   }, [user]);
@@ -61,20 +62,28 @@ export default function SettingsPage() {
       analysisAlerts,
     };
     
+    // Notification toggles still live only in localStorage (not yet a DB feature).
     saveSettingsToStorage(settings);
 
-    if (activeSection === 'profile') {
-      try {
-        const response = await api.put('/users/profile', { name, institution });
-        if (setUser) {
-          setUser(response.data.user);
-        }
-        toast.success('Profile saved to database successfully!');
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Failed to update profile in database');
+    // Persist profile + preferences to the DB from either Save button.
+    try {
+      const response = await api.put('/users/profile', {
+        name,
+        institution,
+        researchField,
+        citationFormat,
+        defaultDepth,
+      });
+      if (setUser) {
+        setUser(response.data.user);
       }
-    } else {
-      toast.success('Settings saved successfully!');
+      toast.success(
+        activeSection === 'profile'
+          ? 'Profile saved to database successfully!'
+          : 'Preferences saved to database successfully!'
+      );
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to save settings to database');
     }
   };
 
