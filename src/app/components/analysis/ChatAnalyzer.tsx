@@ -6,6 +6,7 @@ import { getPapers } from '../../services/paperService';
 import { startOrResumeChat, sendChatMessage, mapMessagesToFrontend } from '../../services/chatService';
 import { getMyProgress, toScoreMap } from '../../services/progressService';
 import { toast } from 'sonner';
+import { useLanguage } from '../../context/LanguageContext';
 
 /*
  * ChatAnalyzer
@@ -29,6 +30,7 @@ interface ArticleGroup {
 
 export default function ChatAnalyzer() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -67,7 +69,7 @@ export default function ChatAnalyzer() {
     setIsCreatingGroup(false);
     setNewGroupName('');
     setGroupArticleSelection(new Set());
-    toast.success(`Group "${g.name}" created`);
+    toast.success(t('analysis.chatAnalyzer.groupCreated').replace('{name}', g.name));
   };
 
   // Real per-paper comprehension, scored server-side by the LLM judge and
@@ -92,8 +94,8 @@ export default function ChatAnalyzer() {
   useEffect(() => {
     if (comprehensionPercent === 100 && !celebratedRef.current) {
       celebratedRef.current = true;
-      toast.success('100% comprehension reached!', {
-        description: 'Outstanding work — you mastered this material.',
+      toast.success(t('analysis.chatAnalyzer.comprehensionMax'), {
+        description: t('analysis.chatAnalyzer.comprehensionMaxDesc'),
       });
     } else if (comprehensionPercent < 100) {
       celebratedRef.current = false;
@@ -110,12 +112,12 @@ export default function ChatAnalyzer() {
         const ids = JSON.parse(rawIds) as string[];
         if (ids && ids.length > 0) {
           const gid = `resumed-${Date.now()}`;
-          const g: ArticleGroup = { id: gid, name: resumedName || 'Resumed Session', articleIds: ids };
+          const g: ArticleGroup = { id: gid, name: resumedName || t('analysis.chatAnalyzer.resumedSession'), articleIds: ids };
           setGroups((p) => [g, ...p]);
           setActiveGroupId(gid);
           setIsResumedMode(true);
           setChatCreated(true);
-          toast.success('Resumed session loaded');
+          toast.success(t('analysis.chatAnalyzer.resumedSessionLoaded'));
         }
       }
     } catch (e) { /* ignore */ }
@@ -155,7 +157,7 @@ export default function ChatAnalyzer() {
           setActiveGroupId(restored[0].id);
         } else if (data.length > 0) {
           // First visit (or nothing valid stored): seed one group with all papers.
-          const seed: ArticleGroup = { id: 'g1', name: 'My Research', articleIds: data.map((p) => p.id) };
+          const seed: ArticleGroup = { id: 'g1', name: t('analysis.chatAnalyzer.myResearch'), articleIds: data.map((p) => p.id) };
           setGroups([seed]);
           setActiveGroupId('g1');
         }
@@ -193,7 +195,7 @@ export default function ChatAnalyzer() {
         setMessages(mapMessagesToFrontend(session.messages, activeArticleId));
       } catch (err) {
         console.error('Failed to init chat session:', err);
-        toast.error('Failed to initialize Socratic chat session');
+        toast.error(t('analysis.chatAnalyzer.failedInitChat'));
       } finally {
         setIsTyping(false);
         setTimeout(() => {
@@ -244,7 +246,7 @@ export default function ChatAnalyzer() {
       }
     } catch (err) {
       console.error('Failed to send message:', err);
-      toast.error('Failed to get response from Socratic bot');
+      toast.error(t('analysis.chatAnalyzer.failedSendMessage'));
       setMessages((p) => p.filter(m => m.id !== tempUserMsgId));
     } finally {
       setIsTyping(false);
@@ -266,13 +268,13 @@ export default function ChatAnalyzer() {
       const detail = e?.detail;
       if (!detail || !detail.articleIds) return;
       const gid = `comp-${Date.now()}`;
-      const g = { id: gid, name: detail.name || 'Comparison Chat', articleIds: detail.articleIds } as ArticleGroup;
+      const g = { id: gid, name: detail.name || t('analysis.chatAnalyzer.comparisonChat'), articleIds: detail.articleIds } as ArticleGroup;
       setGroups((p) => [g, ...p]);
       setActiveGroupId(gid);
       setIsResumedMode(true);
       if (detail.messages) setMessages(detail.messages as any);
       setChatCreated(true); // Enable chat view immediately on comparison import
-      toast.success('Chat created from comparison');
+      toast.success(t('analysis.chatAnalyzer.chatCreatedFromComparison'));
     };
     window.addEventListener('create-chat-from-comparison', handler as EventListener);
     return () => window.removeEventListener('create-chat-from-comparison', handler as EventListener);
@@ -290,8 +292,8 @@ export default function ChatAnalyzer() {
             <MessageSquare className="w-5 h-5 text-red-600" />
           </div>
           <div>
-            <h1 className="font-bold text-foreground">Chat Analyzer</h1>
-            <p className="text-xs text-muted-foreground">Comprehension tracker + research chat</p>
+            <h1 className="font-bold text-foreground">{t('analysis.chatAnalyzer.title')}</h1>
+            <p className="text-xs text-muted-foreground">{t('analysis.chatAnalyzer.subtitle')}</p>
           </div>
         </div>
         <button
@@ -299,7 +301,7 @@ export default function ChatAnalyzer() {
           className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-sm font-medium rounded-lg transition-colors border border-border"
         >
           <Home className="w-4 h-4" />
-          <span className="hidden sm:inline">Back to Home</span>
+          <span className="hidden sm:inline">{t('analysis.chatAnalyzer.backToHome')}</span>
         </button>
       </header>
 
@@ -309,13 +311,13 @@ export default function ChatAnalyzer() {
           <div className="max-w-6xl mx-auto w-full flex items-center gap-4">
             <div className="text-sm font-medium text-foreground">{
               allArticles.length === 0
-                ? 'No articles yet — upload one in Library'
+                ? t('analysis.chatAnalyzer.noArticlesYet')
                 : activeGroup
-                  ? `${activeGroup.articleIds.length} article${activeGroup.articleIds.length !== 1 ? 's' : ''} selected`
-                  : 'No articles selected — open the ⋮ menu to pick'
+                  ? `${activeGroup.articleIds.length} ${activeGroup.articleIds.length !== 1 ? t('analysis.chatAnalyzer.articlesSelectedPlural') : t('analysis.chatAnalyzer.articlesSelectedSingular')}`
+                  : t('analysis.chatAnalyzer.noArticlesSelected')
             }</div>
             <div className="flex-1">
-              <div className="text-[11px] text-muted-foreground mb-1 font-semibold uppercase tracking-wide">Difficulty</div>
+              <div className="text-[11px] text-muted-foreground mb-1 font-semibold uppercase tracking-wide">{t('analysis.chatAnalyzer.difficulty')}</div>
               <input
                 type="range"
                 min={1}
@@ -325,25 +327,25 @@ export default function ChatAnalyzer() {
                 className="w-full"
               />
               <div className="text-xs text-muted-foreground flex justify-between mt-1">
-                <span>Fast</span><span>Regular</span><span>Deep</span>
+                <span>{t('analysis.chatAnalyzer.fast')}</span><span>{t('analysis.chatAnalyzer.regular')}</span><span>{t('analysis.chatAnalyzer.deep')}</span>
               </div>
             </div>
             <div>
               <button
                 onClick={() => {
                   const articleIds = activeGroup ? activeGroup.articleIds : [];
-                  if (!articleIds || articleIds.length === 0) { toast.error('Select articles first'); return; }
+                  if (!articleIds || articleIds.length === 0) { toast.error(t('analysis.chatAnalyzer.selectArticlesFirst')); return; }
                   const gid = `live-${Date.now()}`;
-                  const g = { id: gid, name: activeGroup?.name || 'Live Session', articleIds } as ArticleGroup;
+                  const g = { id: gid, name: activeGroup?.name || t('analysis.chatAnalyzer.liveSession'), articleIds } as ArticleGroup;
                   setGroups((p) => [g, ...p]);
                   setActiveGroupId(gid);
                   setChatCreated(true);
                   setMessages([]);
-                  toast.success('Chat created');
+                  toast.success(t('analysis.chatAnalyzer.chatCreated'));
                 }}
                 className="px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700"
               >
-                Create Chat
+                {t('analysis.chatAnalyzer.createChat')}
               </button>
             </div>
           </div>
@@ -368,7 +370,7 @@ export default function ChatAnalyzer() {
           )}
           {/* Animated comprehension badge — spinning gradient ring + glowing pulsing brain.
               At 100% it turns gold and celebrates (faster spin, scaling bounce, mastery sparkle). */}
-          <div className={`relative w-12 h-12 flex items-center justify-center shrink-0 transition-transform duration-500 ${comprehensionPercent === 100 ? 'mt-5 scale-110' : ''}`} aria-label="Comprehension" title="Comprehension">
+          <div className={`relative w-12 h-12 flex items-center justify-center shrink-0 transition-transform duration-500 ${comprehensionPercent === 100 ? 'mt-5 scale-110' : ''}`} aria-label={t('analysis.chatAnalyzer.comprehensionAria')} title={t('analysis.chatAnalyzer.comprehensionAria')}>
             {/* rotating conic gradient ring — red while learning, gold at mastery */}
             <span
               className={`absolute inset-0 rounded-full animate-spin ${comprehensionPercent === 100 ? '[animation-duration:1.2s]' : '[animation-duration:3s]'}`}
@@ -403,7 +405,7 @@ export default function ChatAnalyzer() {
           </div>
           <span
             onClick={() => setPreviewMax((v) => !v)}
-            title="TEMP: click to preview 100% celebration"
+            title={t('analysis.chatAnalyzer.previewMaxTitle')}
             className={`text-sm font-bold tabular-nums relative cursor-pointer select-none ${comprehensionPercent === 100 ? 'text-red-600 dark:text-red-300 text-base' : 'text-foreground'
             }`}>{comprehensionPercent}%</span>
           <div className={`relative w-3 flex-1 rounded-full overflow-hidden border ${comprehensionPercent === 100
@@ -423,7 +425,7 @@ export default function ChatAnalyzer() {
             />
           </div>
           <span className={`text-[10px] relative ${comprehensionPercent === 100 ? 'text-red-600 dark:text-red-300 font-bold' : 'text-muted-foreground'
-            }`}>{comprehensionPercent === 100 ? 'MAX!' : '0%'}</span>
+            }`}>{comprehensionPercent === 100 ? t('analysis.chatAnalyzer.maxLabel') : '0%'}</span>
         </aside>
 
         {/* Chat section — moved from main screen */}
@@ -432,7 +434,7 @@ export default function ChatAnalyzer() {
             <div className="bg-card px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0 gap-4 w-full min-w-0">
               <div className="flex items-center gap-2 shrink-0">
                 <Sparkles className="w-5 h-5 text-red-600" />
-                <span className="font-bold text-foreground">Chat Analyzer</span>
+                <span className="font-bold text-foreground">{t('analysis.chatAnalyzer.title')}</span>
               </div>
 
               {/* Group tabs */}
@@ -463,22 +465,22 @@ export default function ChatAnalyzer() {
                   <button
                     onClick={() => setShowStatsMenu((v) => !v)}
                     className="p-1.5 hover:bg-red-600 hover:text-white hover:border-red-600 rounded-lg text-foreground transition-all border border-border shadow-sm"
-                    aria-label="Manage article groups"
+                    aria-label={t('analysis.chatAnalyzer.manageGroupsAria')}
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   {showStatsMenu && (
                     <div className="absolute right-0 top-full mt-2 min-w-[18rem] z-50 bg-background border border-border rounded-xl shadow-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-foreground">Article Groups</h3>
-                        <span className="text-xs text-muted-foreground">{groups.length} groups</span>
+                        <h3 className="text-sm font-semibold text-foreground">{t('analysis.chatAnalyzer.articleGroups')}</h3>
+                        <span className="text-xs text-muted-foreground">{groups.length} {t('analysis.chatAnalyzer.groupsCountSuffix')}</span>
                       </div>
                       <button
                         onClick={() => { setIsCreatingGroup(true); setShowStatsMenu(false); }}
                         className="w-full text-left px-3 py-2.5 text-sm bg-muted/50 hover:bg-muted rounded-lg flex items-center gap-2 transition-colors text-foreground border border-border mb-2"
                       >
                         <BookmarkPlus className="w-4 h-4 text-red-600" />
-                        <span>Create New Group</span>
+                        <span>{t('analysis.chatAnalyzer.createNewGroup')}</span>
                       </button>
                       <div className="space-y-1 max-h-48 overflow-y-auto">
                         {groups.map((g) => (
@@ -490,7 +492,7 @@ export default function ChatAnalyzer() {
                           >
                             <div>
                               <div className="text-sm font-medium text-foreground">{g.name}</div>
-                              <div className="text-xs text-muted-foreground">{g.articleIds.length} articles</div>
+                              <div className="text-xs text-muted-foreground">{g.articleIds.length} {t('analysis.chatAnalyzer.articlesCountSuffix')}</div>
                             </div>
                             {activeGroupId === g.id && <Check className="w-4 h-4 text-red-600" />}
                           </button>
@@ -513,14 +515,14 @@ export default function ChatAnalyzer() {
                         setGroups((prev) => prev.map(g => g.id === activeGroup.id ? { ...g, name: editingGroupName || g.name } : g));
                         setEditingGroupId(null);
                         setEditingGroupName('');
-                        toast.success('Group name updated');
+                        toast.success(t('analysis.chatAnalyzer.groupNameUpdated'));
                       }} className="p-1 text-green-600"><Check className="w-4 h-4" /></button>
                       <button onClick={() => { setEditingGroupId(null); setEditingGroupName(''); }} className="p-1 text-muted-foreground"><X className="w-4 h-4" /></button>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-red-700 dark:text-red-300">{activeGroup.name}</h3>
-                      <button onClick={() => { setEditingGroupId(activeGroup.id); setEditingGroupName(activeGroup.name); }} className="p-1 text-muted-foreground" title="Edit group name"><Edit className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditingGroupId(activeGroup.id); setEditingGroupName(activeGroup.name); }} className="p-1 text-muted-foreground" title={t('analysis.chatAnalyzer.editGroupNameTitle')}><Edit className="w-4 h-4" /></button>
                     </div>
                   )}
                 </div>
@@ -540,12 +542,12 @@ export default function ChatAnalyzer() {
                     </button>
                   );
                 })}
-                <span className="text-[10px] text-muted-foreground ml-auto">{messages.length} message{messages.length === 1 ? '' : 's'}</span>
+                <span className="text-[10px] text-muted-foreground ml-auto">{messages.length} {messages.length === 1 ? t('analysis.chatAnalyzer.messageSingular') : t('analysis.chatAnalyzer.messagePlural')}</span>
               </div>
             )}
             {!activeGroup && (
               <div className="px-5 py-1.5 border-b border-border bg-muted/30 flex justify-end">
-                <span className="text-[10px] text-muted-foreground">{messages.length} message{messages.length === 1 ? '' : 's'}</span>
+                <span className="text-[10px] text-muted-foreground">{messages.length} {messages.length === 1 ? t('analysis.chatAnalyzer.messageSingular') : t('analysis.chatAnalyzer.messagePlural')}</span>
               </div>
             )}
 
@@ -553,16 +555,16 @@ export default function ChatAnalyzer() {
             {isCreatingGroup && (
               <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-card rounded-2xl shadow-xl w-full max-w-md p-6 border border-border">
-                  <h3 className="font-bold text-foreground mb-4">Create New Group</h3>
+                  <h3 className="font-bold text-foreground mb-4">{t('analysis.chatAnalyzer.createNewGroup')}</h3>
                   <input
                     type="text"
-                    placeholder="Group name..."
+                    placeholder={t('analysis.chatAnalyzer.groupNamePlaceholder')}
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
                     className="w-full px-4 py-3 border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4 bg-background text-foreground"
                     autoFocus
                   />
-                  <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Select Articles</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{t('analysis.chatAnalyzer.selectArticles')}</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto mb-4">
                     {allArticles.map((a) => {
                       const sel = groupArticleSelection.has(a.id);
@@ -590,13 +592,13 @@ export default function ChatAnalyzer() {
                       disabled={!newGroupName.trim() || groupArticleSelection.size === 0}
                       className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 disabled:opacity-50 transition-colors"
                     >
-                      Create
+                      {t('analysis.chatAnalyzer.create')}
                     </button>
                     <button
                       onClick={() => { setIsCreatingGroup(false); setNewGroupName(''); setGroupArticleSelection(new Set()); }}
                       className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                     >
-                      Cancel
+                      {t('analysis.chatAnalyzer.cancel')}
                     </button>
                   </div>
                 </div>
@@ -622,7 +624,7 @@ export default function ChatAnalyzer() {
                             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{msg.answer}</p>
                             {msg.sources && (
                               <div className="mt-4 pt-4 border-t border-border">
-                                <p className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Sources</p>
+                                <p className="text-[11px] font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{t('analysis.chatAnalyzer.sources')}</p>
                                 <div className="flex flex-wrap gap-2">
                                   {msg.sources.map((source, i) => (
                                     <span key={i} className="px-2.5 py-1 bg-muted text-muted-foreground text-[10px] font-bold rounded border border-border flex items-center gap-1.5">
@@ -656,7 +658,7 @@ export default function ChatAnalyzer() {
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && send()}
-                  placeholder="Ask about methodology, findings, or gaps..."
+                  placeholder={t('analysis.chatAnalyzer.askPlaceholder')}
                   className="flex-1 px-5 py-3 text-sm bg-muted/40 dark:bg-slate-800/40 border border-border dark:border-slate-700/50 rounded-2xl focus:ring-2 focus:ring-red-600/50 focus:border-red-500 outline-none text-foreground placeholder:text-muted-foreground transition-all shadow-inner"
                 />
                 <button

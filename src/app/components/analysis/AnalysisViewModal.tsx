@@ -1,5 +1,6 @@
 ﻿import { X, Download, Eye } from 'lucide-react';
 import { SavedAnalysis } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 /*
  * AnalysisViewModal
@@ -15,6 +16,7 @@ interface AnalysisViewModalProps {
 }
 
 export default function AnalysisViewModal({ analysis, onClose }: AnalysisViewModalProps) {
+  const { t } = useLanguage();
   // Build a Markdown-ish text document from the analysis fields and trigger a
   // client-side download via a temporary <a> + object URL (no server needed).
   const handleDownload = () => {
@@ -65,7 +67,7 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
             </div>
             <div>
               <h2 className="font-bold text-foreground">{analysis.name}</h2>
-              <p className="text-xs text-muted-foreground">View Only</p>
+              <p className="text-xs text-muted-foreground">{t('analysis.view.viewOnly')}</p>
             </div>
           </div>
           <button
@@ -89,7 +91,7 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
 
             {/* Prompt */}
             <div>
-              <h3 className="text-sm font-bold text-foreground mb-2">Prompt</h3>
+              <h3 className="text-sm font-bold text-foreground mb-2">{t('analysis.view.prompt')}</h3>
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-sm text-foreground leading-relaxed">{analysis.prompt}</p>
               </div>
@@ -97,7 +99,7 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
 
             {/* Analysis Result */}
             <div>
-              <h3 className="text-sm font-bold text-foreground mb-2">Analysis Result</h3>
+              <h3 className="text-sm font-bold text-foreground mb-2">{t('analysis.view.analysisResult')}</h3>
               <div className="bg-muted rounded-lg p-4">
                 <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                   {analysis.result}
@@ -108,7 +110,7 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
             {/* Comparison */}
             {analysis.comparison && (
               <div>
-                <h3 className="text-sm font-bold text-foreground mb-2">Comparison</h3>
+                <h3 className="text-sm font-bold text-foreground mb-2">{t('analysis.view.comparison')}</h3>
                 <div className="bg-muted rounded-lg p-4">
                   <p className="text-sm text-foreground leading-relaxed">{analysis.comparison}</p>
                 </div>
@@ -118,7 +120,7 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
             {/* Questions from Prompt */}
             {analysis.questionsFromPrompt && analysis.questionsFromPrompt.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-foreground mb-2">Questions from Prompt</h3>
+                <h3 className="text-sm font-bold text-foreground mb-2">{t('analysis.view.questionsFromPrompt')}</h3>
                 <div className="bg-muted rounded-lg p-4">
                   <ul className="space-y-2">
                     {analysis.questionsFromPrompt.map((question, index) => (
@@ -140,14 +142,14 @@ ${analysis.questionsFromPrompt.map((q, i) => `${i + 1}. ${q}`).join('\n')}` : ''
         <div className="flex items-center justify-between px-6 py-4 border-t border-border bg-muted/50">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Eye className="w-4 h-4" />
-            <span>View Only Mode</span>
+            <span>{t('analysis.view.viewOnlyMode')}</span>
           </div>
           <button
             onClick={handleDownload}
             className="flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
           >
             <Download className="w-4 h-4" />
-            Download
+            {t('analysis.view.download')}
           </button>
         </div>
       </div>

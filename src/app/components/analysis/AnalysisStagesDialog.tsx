@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle2, Circle, Loader2, Sparkles, Lightbulb } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 /*
  * AnalysisStagesDialog
@@ -16,37 +17,28 @@ interface AnalysisStagesDialogProps {
   onComplete: () => void;        // all stages finished -> open the real result
 }
 
-const TRIVIA = [
-  'The word "research" comes from Old French "recerche", meaning "to seek out again."',
-  'The first peer-reviewed journal, Philosophical Transactions, was published in 1665.',
-  'Albert Einstein published 4 revolutionary papers in a single year — 1905.',
-  'Over 2.5 million scientific papers are published globally every year.',
-  'The average academic paper has around 25–30 citations.',
-  'DNA\'s double helix structure was published in Nature in April 1953.',
-  'The first computer "bug" was a moth found in a Harvard Mark II in 1947.',
-  'Peer review as a formal process was not widespread until the mid-20th century.',
-  'The H-index measures both productivity and impact of a researcher\'s work.',
-  'Open-access publishing now accounts for over 50 % of new journal articles.',
-];
+const TRIVIA_COUNT = 10;
 
 export default function AnalysisStagesDialog({ type, onClose, onComplete }: AnalysisStagesDialogProps) {
+  const { t } = useLanguage();
+  const TRIVIA = Array.from({ length: TRIVIA_COUNT }, (_, i) => t(`analysis.stages.trivia.${i}`));
   const [currentStage, setCurrentStage] = useState(0);                              // index of stage in progress
-  const [triviaIdx, setTriviaIdx] = useState(Math.floor(Math.random() * TRIVIA.length)); // start on a random fact
+  const [triviaIdx, setTriviaIdx] = useState(Math.floor(Math.random() * TRIVIA_COUNT)); // start on a random fact
   const [triviaVisible, setTriviaVisible] = useState(true);                         // drives the fade transition
 
   // Pick the stage list based on mode. Compare has 4 steps, analyze has 3.
   const stages =
     type === 'compare'
       ? [
-          { title: 'Extracting text',           desc: 'Reading contents of selected articles' },
-          { title: 'Identifying methodologies', desc: 'Comparing research approaches' },
-          { title: 'Cross-referencing findings',desc: 'Finding similarities and contradictions' },
-          { title: 'Generating comparison table',desc: 'Structuring the side-by-side overview' },
+          { title: t('analysis.stages.compare.extractingText.title'), desc: t('analysis.stages.compare.extractingText.desc') },
+          { title: t('analysis.stages.compare.identifyingMethodologies.title'), desc: t('analysis.stages.compare.identifyingMethodologies.desc') },
+          { title: t('analysis.stages.compare.crossReferencing.title'), desc: t('analysis.stages.compare.crossReferencing.desc') },
+          { title: t('analysis.stages.compare.generatingTable.title'), desc: t('analysis.stages.compare.generatingTable.desc') },
         ]
       : [
-          { title: 'Scanning document',    desc: 'Parsing text and visual elements' },
-          { title: 'Extracting key points',desc: 'Identifying main arguments and findings' },
-          { title: 'Synthesizing insights',desc: 'Applying AI models to generate summary' },
+          { title: t('analysis.stages.analyze.scanning.title'), desc: t('analysis.stages.analyze.scanning.desc') },
+          { title: t('analysis.stages.analyze.extracting.title'), desc: t('analysis.stages.analyze.extracting.desc') },
+          { title: t('analysis.stages.analyze.synthesizing.title'), desc: t('analysis.stages.analyze.synthesizing.desc') },
         ];
 
   /* Advance stages: every 1.5s bump to the next stage. Once past the last
@@ -87,7 +79,7 @@ export default function AnalysisStagesDialog({ type, onClose, onComplete }: Anal
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-red-600" />
             <h3 className="font-bold text-foreground">
-              {type === 'compare' ? 'Comparing Documents' : 'Analyzing Document'}
+              {type === 'compare' ? t('analysis.stages.comparingDocuments') : t('analysis.stages.analyzingDocument')}
             </h3>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -119,7 +111,7 @@ export default function AnalysisStagesDialog({ type, onClose, onComplete }: Anal
           {/* Progress bar */}
           <div>
             <div className="flex justify-between text-xs font-bold text-slate-500 mb-1.5">
-              <span>Processing…</span>
+              <span>{t('analysis.stages.processing')}</span>
               <span>{pct}%</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -171,7 +163,7 @@ export default function AnalysisStagesDialog({ type, onClose, onComplete }: Anal
               <Lightbulb className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-1">
-                  Did you know?
+                  {t('analysis.stages.didYouKnow')}
                 </p>
                 <p className="text-xs text-amber-800 leading-relaxed">{TRIVIA[triviaIdx]}</p>
               </div>
@@ -179,15 +171,15 @@ export default function AnalysisStagesDialog({ type, onClose, onComplete }: Anal
           </div>
 
           <p className="text-center text-xs text-slate-400 font-medium">
-            Analysis typically takes 20–40 seconds ·{' '}
-            <button onClick={onClose} className="underline hover:text-slate-600">cancel</button>
+            {t('analysis.stages.durationNote')}{' '}
+            <button onClick={onClose} className="underline hover:text-slate-600">{t('analysis.stages.cancel')}</button>
           </p>
         </div>
 
         {currentStage >= stages.length && (
           <div className="bg-emerald-50 px-6 py-3 text-center border-t border-emerald-100">
             <p className="text-sm font-bold text-emerald-700 flex items-center justify-center gap-2">
-              <CheckCircle2 className="w-4 h-4" /> Analysis complete!
+              <CheckCircle2 className="w-4 h-4" /> {t('analysis.stages.analysisComplete')}
             </p>
           </div>
         )}

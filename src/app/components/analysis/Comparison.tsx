@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GitCompare, Download, Plus, X, Check } from 'lucide-react';
 import { Article } from '../../data/mockData';
 import { getPapers } from '../../services/paperService';
+import { useLanguage } from '../../context/LanguageContext';
 
 /*
  * Comparison (full page)
@@ -17,6 +18,7 @@ interface ComparisonProps {
 }
 
 export default function Comparison({ onNavigate }: ComparisonProps) {
+  const { t } = useLanguage();
   const [selectedArticles, setSelectedArticles] = useState<Article[]>([]);
   const [showSelector, setShowSelector] = useState(false);
   const [allArticles, setAllArticles] = useState<Article[]>([]);
@@ -52,13 +54,13 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
   // The rows of the comparison table, in display order. `key` maps to an
   // Article field; `label` is the human heading.
   const comparisonCategories = [
-    { key: 'title', label: 'Title' },
-    { key: 'authors', label: 'Authors' },
-    { key: 'year', label: 'Publication Year' },
-    { key: 'topics', label: 'Topics' },
-    { key: 'methodology', label: 'Methodology' },
-    { key: 'keyFindings', label: 'Key Findings' },
-    { key: 'citations', label: 'Citations' }
+    { key: 'title', label: t('analysis.compare.field.title') },
+    { key: 'authors', label: t('analysis.compare.field.authors') },
+    { key: 'year', label: t('analysis.compare.field.year') },
+    { key: 'topics', label: t('analysis.compare.field.topics') },
+    { key: 'methodology', label: t('analysis.compare.field.methodology') },
+    { key: 'keyFindings', label: t('analysis.compare.field.keyFindings') },
+    { key: 'citations', label: t('analysis.compare.field.citations') }
   ];
 
   // Render one table cell. Arrays get special formatting: keyFindings -> a
@@ -106,8 +108,8 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Article Comparison</h1>
-              <p className="text-slate-600">Compare multiple research papers side by side</p>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">{t('analysis.compare.pageTitle')}</h1>
+              <p className="text-slate-600">{t('analysis.compare.pageSubtitle')}</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -115,11 +117,11 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
                 className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
               >
                 <Plus className="w-5 h-5" />
-                Select Articles ({selectedArticles.length}/4)
+                {t('analysis.compare.selectArticlesCount').replace('{count}', String(selectedArticles.length))}
               </button>
               <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
                 <Download className="w-5 h-5" />
-                Export Comparison
+                {t('analysis.compare.exportComparison')}
               </button>
             </div>
           </div>
@@ -131,7 +133,7 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
         {showSelector && (
           <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-slate-900">Select up to 4 articles to compare</h3>
+              <h3 className="font-semibold text-slate-900">{t('analysis.compare.selectUpTo4')}</h3>
               <button
                 onClick={() => setShowSelector(false)}
                 className="text-slate-400 hover:text-slate-600"
@@ -160,7 +162,7 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <h4 className="font-semibold text-slate-900 text-sm mb-1">{article.title}</h4>
-                        <p className="text-xs text-slate-600">{article.authors[0]} et al. ({article.year})</p>
+                        <p className="text-xs text-slate-600">{article.authors[0]} {t('analysis.reports.etAl')} ({article.year})</p>
                       </div>
                       {isSelected && (
                         <div className="w-6 h-6 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -182,7 +184,7 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">Category</th>
+                    <th className="px-6 py-4 text-left font-semibold text-slate-900 w-48">{t('analysis.compare.category')}</th>
                     {selectedArticles.map(article => (
                       <th key={article.id} className="px-6 py-4 text-left font-semibold text-slate-900 min-w-[300px]">
                         <div className="flex items-start justify-between gap-2">
@@ -218,13 +220,13 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
         ) : (
           <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
             <GitCompare className="w-16 h-16 text-red-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No Articles to Compare</h3>
-            <p className="text-slate-600 mb-6">Select at least two articles to start comparison</p>
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">{t('analysis.compare.noArticlesTitle')}</h3>
+            <p className="text-slate-600 mb-6">{t('analysis.compare.noArticlesDesc')}</p>
             <button
               onClick={() => setShowSelector(true)}
               className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              Select Articles
+              {t('analysis.compare.selectArticles')}
             </button>
           </div>
         )}
@@ -234,20 +236,20 @@ export default function Comparison({ onNavigate }: ComparisonProps) {
           <div className="mt-6 bg-gradient-to-br from-emerald-50 to-violet-50 rounded-lg border border-emerald-200 p-6">
             <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
               <GitCompare className="w-5 h-5 text-emerald-600" />
-              AI Insights from Comparison
+              {t('analysis.compare.aiInsightsTitle')}
             </h3>
             <div className="space-y-3 text-sm text-slate-700">
               <div className="bg-white rounded-lg p-4 border border-emerald-100">
-                <p className="font-medium text-emerald-900 mb-2">Common Themes:</p>
-                <p>The research papers share a focus on AI and machine learning, with emphasis on practical applications across different domains.</p>
+                <p className="font-medium text-emerald-900 mb-2">{t('analysis.compare.commonThemes')}</p>
+                <p>{t('analysis.compare.commonThemesText')}</p>
               </div>
               <div className="bg-white rounded-lg p-4 border border-emerald-100">
-                <p className="font-medium text-emerald-900 mb-2">Methodological Differences:</p>
-                <p>While one research uses literature review, the other is based on a controlled clinical trial.</p>
+                <p className="font-medium text-emerald-900 mb-2">{t('analysis.compare.methodologicalDifferences')}</p>
+                <p>{t('analysis.compare.methodologicalDifferencesText')}</p>
               </div>
               <div className="bg-white rounded-lg p-4 border border-emerald-100">
-                <p className="font-medium text-emerald-900 mb-2">Recommendations:</p>
-                <p>Consider reading "Transfer Learning in Medical AI" which may complement these insights.</p>
+                <p className="font-medium text-emerald-900 mb-2">{t('analysis.compare.recommendations')}</p>
+                <p>{t('analysis.compare.recommendationsText')}</p>
               </div>
             </div>
           </div>

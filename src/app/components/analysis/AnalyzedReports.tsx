@@ -10,6 +10,7 @@ import { loadUploadedArticles } from '../../../utils/articleStore';
 import { loadReports, deleteReport, AnalysisReport } from '../../../utils/reportsStore';
 import { getPapers } from '../../services/paperService';
 import { toast } from 'sonner';
+import { useLanguage } from '../../context/LanguageContext';
 import AnalysisResultsModal from './AnalysisResultsModal';
 import ComparisonModal from './ComparisonModal';
 import ArticleIcon from '../ui/ArticleIcon';
@@ -28,6 +29,7 @@ import SinglePDFViewer from '../library/SinglePDFViewer';
 
 export default function AnalyzedReports() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   // UI state: search box, which report row is expanded, and which modal is open.
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -60,14 +62,14 @@ export default function AnalyzedReports() {
 
   // Delete with a confirm prompt, then drop it from state + toast.
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Delete "${name}"?`)) {
+    if (window.confirm(t('analysis.reports.deleteConfirm').replace('{name}', name))) {
       setReports(deleteReport(id));
-      toast.success('Report deleted successfully');
+      toast.success(t('analysis.reports.deleteSuccess'));
     }
   };
 
   const handleExport = (report: AnalysisReport) => {
-    toast.success(`Exporting "${report.name}" as PDF…`);
+    toast.success(t('analysis.reports.exportingAs').replace('{name}', report.name));
   };
 
   const handleViewAnalysis = (report: AnalysisReport) => {
@@ -114,8 +116,8 @@ export default function AnalyzedReports() {
                 <BarChart className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-foreground text-xl">Analyzed Reports</h1>
-                <p className="text-sm text-muted-foreground">{reports.length} reports · {filteredReports.length} shown</p>
+                <h1 className="font-bold text-foreground text-xl">{t('analysis.reports.title')}</h1>
+                <p className="text-sm text-muted-foreground">{reports.length} {t('analysis.reports.reportsCountSuffix')} · {filteredReports.length} {t('analysis.reports.shownSuffix')}</p>
               </div>
             </div>
             <button
@@ -123,7 +125,7 @@ export default function AnalyzedReports() {
               className="flex items-center gap-2 px-4 py-2 bg-muted hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-sm font-medium rounded-lg transition-colors border border-border"
             >
               <Home className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Home</span>
+              <span className="hidden sm:inline">{t('analysis.reports.backToHome')}</span>
             </button>
           </div>
 
@@ -133,7 +135,7 @@ export default function AnalyzedReports() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search reports…"
+                placeholder={t('analysis.reports.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-muted focus:bg-card transition-all"
@@ -152,19 +154,19 @@ export default function AnalyzedReports() {
             <div className="space-y-3">
               {analyzedArticles.length === 0 ? (
                 <div className="bg-card border border-border rounded-2xl p-6 text-center">
-                  <p className="text-sm text-muted-foreground">No articles in Research Chat yet.</p>
+                  <p className="text-sm text-muted-foreground">{t('analysis.reports.noArticlesYet')}</p>
                 </div>
               ) : (
                 analyzedArticles.map((article) => (
                   <div key={article.id} className="bg-card rounded-xl border border-border p-3 flex items-center gap-3">
-                    <ArticleIcon size="md" title="Article">
+                    <ArticleIcon size="md" title={t('chat.articleIconTitle')}>
                       <FileText className="w-5 h-5 text-current" />
                     </ArticleIcon>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{article.title}</p>
-                      <p className="text-xs text-muted-foreground">{article.authors[0]} et al. · {article.year}</p>
+                      <p className="text-xs text-muted-foreground">{article.authors[0]} {t('analysis.reports.etAl')} · {article.year}</p>
                     </div>
-                    <button onClick={() => setSinglePDFView(article)} className="p-2 text-muted-foreground hover:text-foreground rounded-md" title="Open PDF">
+                    <button onClick={() => setSinglePDFView(article)} className="p-2 text-muted-foreground hover:text-foreground rounded-md" title={t('analysis.reports.openPdf')}>
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
@@ -175,11 +177,11 @@ export default function AnalyzedReports() {
 
           {/* Right: Comparison Reports */}
           <div>
-            <h3 className="text-sm font-bold text-foreground mb-3">Comparisons</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3">{t('analysis.reports.comparisons')}</h3>
             <div className="space-y-3">
               {comparisonReports.length === 0 ? (
                 <div className="bg-card border border-border rounded-2xl p-6 text-center">
-                  <p className="text-sm text-muted-foreground">No comparisons available.</p>
+                  <p className="text-sm text-muted-foreground">{t('analysis.reports.noComparisonsAvailable')}</p>
                 </div>
               ) : (
                 comparisonReports.map((report) => (
@@ -187,22 +189,22 @@ export default function AnalyzedReports() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-foreground truncate">{report.name}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{report.articleIds.length} articles · {report.analysisDate}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{report.articleIds.length} {t('analysis.reports.articlesCountSuffix')} · {report.analysisDate}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setCompareArticles(getArticlesForReport(report.articleIds)); setShowCompareModal(true); }} className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Open Comparison</button>
+                        <button onClick={() => { setCompareArticles(getArticlesForReport(report.articleIds)); setShowCompareModal(true); }} className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-bold">{t('analysis.reports.openComparison')}</button>
                       </div>
                     </div>
                     <div className="mt-3 space-y-2">
                       {getArticlesForReport(report.articleIds).map(a => (
                         <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 border border-border">
-                                <ArticleIcon size="sm" title="Article">
+                                <ArticleIcon size="sm" title={t('chat.articleIconTitle')}>
                                   <FileText className="w-4 h-4 text-current" />
                                 </ArticleIcon>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-foreground truncate">{a.title}</p>
                           </div>
-                          <button onClick={() => setSinglePDFView(a)} className="p-2 text-muted-foreground hover:text-foreground rounded-md" title="Open PDF">
+                          <button onClick={() => setSinglePDFView(a)} className="p-2 text-muted-foreground hover:text-foreground rounded-md" title={t('analysis.reports.openPdf')}>
                             <Eye className="w-4 h-4" />
                           </button>
                         </div>
