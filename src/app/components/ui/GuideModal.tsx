@@ -162,32 +162,32 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <BarChart2 className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">Chat Analyzer</h3>
-                    <p className="text-muted-foreground">Compare multiple papers and generate comprehensive reports.</p>
+                    <h3 className="text-xl font-bold text-foreground">{t('guide.analyzerSectionTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guide.analyzerSectionDesc')}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-card border border-border p-4 rounded-xl">
                       <Search className="w-5 h-5 text-red-600 mb-2" />
-                      <h4 className="font-bold text-foreground text-sm">Cross-Reference</h4>
-                      <p className="text-xs text-muted-foreground mt-1">Select multiple papers from your library to find common themes, contradictions, and gaps.</p>
+                      <h4 className="font-bold text-foreground text-sm">{t('guide.crossReferenceTitle')}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">{t('guide.crossReferenceDesc')}</p>
                     </div>
                     <div className="bg-card border border-border p-4 rounded-xl">
                       <FileText className="w-5 h-5 text-red-600 mb-2" />
-                      <h4 className="font-bold text-foreground text-sm">Generate Reports</h4>
-                      <p className="text-xs text-muted-foreground mt-1">Create detailed, structured markdown reports summarizing the findings across all selected papers.</p>
+                      <h4 className="font-bold text-foreground text-sm">{t('guide.generateReportsTitle')}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">{t('guide.generateReportsDesc')}</p>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-border">
-                    <h4 className="font-bold text-foreground text-sm mb-2">How to use:</h4>
+                    <h4 className="font-bold text-foreground text-sm mb-2">{t('guide.howToUse')}</h4>
                     <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                      <li>Go to <strong>Chat Analyzer</strong> from the sidebar.</li>
-                      <li>Select 2 or more papers to compare.</li>
-                      <li>Click <strong>Analyze</strong> to start the process.</li>
-                      <li>View the generated report in <strong>Analyzed Reports</strong>.</li>
+                      <li>{t('guide.howToStep1Pre')}<strong>{t('guide.howToStep1Bold')}</strong>{t('guide.howToStep1Post')}</li>
+                      <li>{t('guide.howToStep2')}</li>
+                      <li>{t('guide.howToStep3Pre')}<strong>{t('guide.howToStep3Bold')}</strong>{t('guide.howToStep3Post')}</li>
+                      <li>{t('guide.howToStep4Pre')}<strong>{t('guide.howToStep4Bold')}</strong>{t('guide.howToStep4Post')}</li>
                     </ol>
                   </div>
                 </div>

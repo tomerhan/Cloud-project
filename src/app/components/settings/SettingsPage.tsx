@@ -338,11 +338,11 @@ export default function SettingsPage() {
             {activeSection === 'notifications' && (
               <div className="p-4 space-y-5">
                 <h2 className="font-bold text-foreground flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-red-600" /> Notifications
+                  <Bell className="w-5 h-5 text-red-600" /> {t('settings.section.notifications')}
                 </h2>
                 {[
-                  { label: 'Weekly research digest', desc: 'Summary of your library activity', state: emailDigest, setter: setEmailDigest },
-                  { label: 'Analysis complete alerts', desc: 'Notify when AI finishes processing', state: analysisAlerts, setter: setAnalysisAlerts },
+                  { label: t('settings.notif.digestLabel'), desc: t('settings.notif.digestDesc'), state: emailDigest, setter: setEmailDigest },
+                  { label: t('settings.notif.alertsLabel'), desc: t('settings.notif.alertsDesc'), state: analysisAlerts, setter: setAnalysisAlerts },
                 ].map(({ label, desc, state, setter }) => (
                   <div key={label} className="flex items-center justify-between p-4 border border-border rounded-xl">
                     <div>
@@ -364,33 +364,33 @@ export default function SettingsPage() {
             {activeSection === 'privacy' && (
               <div className="p-4 space-y-5">
                 <h2 className="font-bold text-foreground flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-red-600" /> Privacy & Data
+                  <Shield className="w-5 h-5 text-red-600" /> {t('settings.privacy.title')}
                 </h2>
                 <div className="bg-card border border-border rounded-xl p-4">
                   <p className="text-sm text-muted-foreground font-medium">
-                    Your research data is stored locally and is never shared with third parties without your explicit consent.
+                    {t('settings.privacy.notice')}
                   </p>
                 </div>
                 <div className="space-y-3">
                   <button
-                    onClick={() => toast.success('Your data export has been queued. You\'ll receive a download link shortly.')}
+                    onClick={() => toast.success(t('settings.privacy.exportToast'))}
                     className="w-full flex items-center gap-3 px-4 py-3.5 border border-border rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-98 text-left"
                   >
                     <BookOpen className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <div className="font-bold text-red-400 text-sm">Export all data</div>
-                      <div className="text-xs text-red-300">Download your library and chat history</div>
+                      <div className="font-bold text-red-400 text-sm">{t('settings.privacy.exportTitle')}</div>
+                      <div className="text-xs text-red-300">{t('settings.privacy.exportDesc')}</div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
                   </button>
                   <button
-                    onClick={() => toast.error('Account deletion requires email confirmation. A link has been sent.')}
+                    onClick={() => toast.error(t('settings.privacy.deleteToast'))}
                     className="w-full flex items-center gap-3 px-4 py-3.5 border border-border rounded-xl hover:bg-red-50 transition-all active:scale-98 text-left"
                   >
                     <Shield className="w-5 h-5 text-red-600" />
                     <div>
-                      <div className="font-bold text-red-400 text-sm">Delete account</div>
-                      <div className="text-xs text-red-300">Permanently remove all your data</div>
+                      <div className="font-bold text-red-400 text-sm">{t('settings.privacy.deleteTitle')}</div>
+                      <div className="text-xs text-red-300">{t('settings.privacy.deleteDesc')}</div>
                     </div>
                     <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
                   </button>
