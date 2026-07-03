@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { FileText, Mail, Lock, ArrowRight, Sun, Moon, Loader2, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { toast } from 'sonner';
 import api from '../../services/api';
 
@@ -14,6 +15,7 @@ export default function Login() {
   const { setUser } = useAuth();
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
 
   // Load theme from localStorage on mount, default to light
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) {
-      toast.error('Please fill in all fields');
+      toast.error(t('auth.login.fillFields'));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function Login() {
       // Update Context
       setUser(user);
       
-      toast.success('Logged in successfully!');
+      toast.success(t('auth.login.success'));
       
       // Redirect based on role
       if (user.role === 'lecturer') {
@@ -58,7 +60,7 @@ export default function Login() {
         navigate('/');
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.');
+      toast.error(error.response?.data?.message || t('auth.login.failed'));
     } finally {
       setIsLoading(false);
     }
@@ -70,11 +72,11 @@ export default function Login() {
       <button
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         className="absolute top-6 right-6 p-3 rounded-lg bg-card border border-border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-md"
-        title="Toggle theme"
+        title={t('auth.toggleTheme')}
       >
         {theme === 'dark' ? <Sun className="w-5 h-5 text-foreground" /> : <Moon className="w-5 h-5 text-foreground" />}
       </button>
-      
+
       <div className="w-full max-w-md">
         {/* Logo and Header Block */}
         <div className="bg-background rounded-t-2xl border-t border-x border-border p-8 pb-0 text-center">
@@ -82,17 +84,17 @@ export default function Login() {
             <FileText className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">ResearchAI</h1>
-          <p className="text-muted-foreground pb-2">Your intelligent research assistant</p>
+          <p className="text-muted-foreground pb-2">{t('auth.login.tagline')}</p>
         </div>
 
         {/* Login Form */}
         <div className="bg-background rounded-b-2xl shadow-lg border-b border-x border-border p-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Sign In</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">{t('auth.login.title')}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Email or Username
+                {t('auth.login.identifierLabel')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -100,7 +102,7 @@ export default function Login() {
                   type="text"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="you@university.edu or username"
+                  placeholder={t('auth.login.identifierPlaceholder')}
                   className="w-full pl-11 pr-4 py-3 border border-input rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-foreground placeholder:text-muted-foreground"
                   required
                   disabled={isLoading}
@@ -110,7 +112,7 @@ export default function Login() {
 
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Password
+                {t('auth.login.passwordLabel')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -130,7 +132,7 @@ export default function Login() {
                   onClick={() => navigate('/forgot-password')}
                   className="text-sm text-red-600 hover:text-red-700 font-medium"
                 >
-                  Forgot Password?
+                  {t('auth.login.forgotPassword')}
                 </button>
               </div>
             </div>
@@ -140,19 +142,19 @@ export default function Login() {
               disabled={isLoading}
               className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('auth.login.submit')}
               {!isLoading && <ArrowRight className="w-5 h-5" />}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
+              {t('auth.login.noAccount')}{' '}
               <button
                 onClick={() => navigate('/register')}
                 className="text-red-600 hover:text-red-700 font-medium"
               >
-                Create Account
+                {t('auth.login.createAccount')}
               </button>
             </p>
           </div>
