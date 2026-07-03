@@ -197,7 +197,7 @@ export default function SettingsPage() {
                     <input
                       value={institution}
                       onChange={(e) => setInstitution(e.target.value)}
-                      placeholder="Enter your institution"
+                      placeholder={t('settings.institutionPlaceholder')}
                       className="w-full px-4 py-3 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none transition-all"
                     />
                   </div>
