@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router';
-import { Menu, FileText, Sun, Moon, HelpCircle } from 'lucide-react';
+import { Menu, FileText, Sun, Moon, HelpCircle, Languages } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useTheme } from '../../context/ThemeContext';
 import GuideModal from '../ui/GuideModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function MainLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div className="flex-1 flex w-full h-full overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -47,7 +49,15 @@ export default function MainLayout() {
               title="View Guide"
             >
               <HelpCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Guide</span>
+              <span className="hidden sm:inline">{t('topbar.guide')}</span>
+            </button>
+            <button
+              onClick={() => setLanguage(language === 'he' ? 'en' : 'he')}
+              className="p-2 rounded-lg bg-muted border border-border hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold"
+              title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+            >
+              <Languages className="w-4 h-4" />
+              <span>{language === 'he' ? 'EN' : 'עב'}</span>
             </button>
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

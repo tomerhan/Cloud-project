@@ -5,6 +5,7 @@ import {
 import { NAV_ITEMS } from '../../config/nav';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SidebarProps {
   mobileSidebarOpen?: boolean;
@@ -16,6 +17,7 @@ export default function Sidebar({ mobileSidebarOpen, onMobileSidebarClose }: Sid
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
 
   const navItems = NAV_ITEMS;
 
@@ -63,9 +65,9 @@ export default function Sidebar({ mobileSidebarOpen, onMobileSidebarClose }: Sid
           const active = isActive(item.path);
           return (
             <button
-              key={item.label}
+              key={item.path}
               onClick={() => handleNavClick(item.path)}
-              title={(!forMobile && collapsed) ? item.label : undefined}
+              title={(!forMobile && collapsed) ? t(item.labelKey) : undefined}
               className={`flex items-center transition-all ${
    collapsed 
     ? 'w-11 h-11 justify-center rounded-xl' 
@@ -78,7 +80,7 @@ export default function Sidebar({ mobileSidebarOpen, onMobileSidebarClose }: Sid
             >
               <item.icon className={`w-5 h-5 flex-shrink-0 ${active ? 'text-white' : 'text-red-600'}`} />
               {(forMobile || !collapsed) && (
-                <span className="text-sm font-medium truncate">{item.label}</span>
+                <span className="text-sm font-medium truncate">{t(item.labelKey)}</span>
               )}
               {(forMobile || !collapsed) && active && (
                 <div className="ml-auto w-1.5 h-1.5 bg-card rounded-full flex-shrink-0" />
