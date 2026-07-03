@@ -68,8 +68,8 @@ export async function deletePaper(id: string): Promise<void> {
   await api.delete(`/papers/${id}`);
 }
 
-export async function queryPaper(id: string, question: string, guide?: string): Promise<string> {
-  const response = await api.post(`/papers/${id}/query`, { question, guide });
+export async function queryPaper(id: string, question: string, guide?: string, language?: string): Promise<string> {
+  const response = await api.post(`/papers/${id}/query`, { question, guide, language });
   return response.data.answer;
 }
 
