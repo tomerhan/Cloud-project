@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Upload as UploadIcon, FileText, X, CheckCircle, Loader, Globe } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface UploadProps {
   onNavigate: (page: string) => void;
 }
 
 export default function Upload({ onNavigate }: UploadProps) {
+  const { t } = useLanguage();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<{name: string, status: 'processing' | 'complete'}[]>([]);
   const [webUrl, setWebUrl] = useState('');
@@ -66,8 +68,8 @@ export default function Upload({ onNavigate }: UploadProps) {
       <div className="max-w-4xl mx-auto px-6 py-8 bg-background">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Upload Articles</h1>
-          <p className="text-muted-foreground">Upload PDF files or convert web pages to analyzed articles</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t('upload.header')}</h1>
+          <p className="text-muted-foreground">{t('upload.headerDesc')}</p>
         </div>
 
         {/* PDF Upload Area */}
@@ -77,10 +79,10 @@ export default function Upload({ onNavigate }: UploadProps) {
              onDrop={handleDrop}
              style={{ borderColor: isDragging ? '#10b981' : undefined, backgroundColor: isDragging ? '#f0fdf4' : undefined }}>
           <UploadIcon className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">Drag PDF files here</h3>
-          <p className="text-muted-foreground mb-4">or click to select files from your computer</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('upload.dragDropTitle')}</h3>
+          <p className="text-muted-foreground mb-4">{t('upload.dragDropDesc')}</p>
           <label className="inline-block px-6 py-3 bg-emerald-600 text-card rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer">
-            Select Files
+            {t('upload.selectFiles')}
             <input
               type="file"
               multiple
@@ -89,22 +91,22 @@ export default function Upload({ onNavigate }: UploadProps) {
               className="hidden"
             />
           </label>
-          <p className="text-sm text-muted-foreground mt-4">Supports PDF files up to 50MB</p>
+          <p className="text-sm text-muted-foreground mt-4">{t('upload.supportsPdf')}</p>
         </div>
 
         {/* Web to PDF Converter */}
         <div className="bg-card rounded-lg border border-border p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="w-6 h-6 text-emerald-600" />
-            <h3 className="text-lg font-semibold text-foreground">Web Page to PDF Converter</h3>
+            <h3 className="text-lg font-semibold text-foreground">{t('upload.webConverterTitle')}</h3>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">Enter a URL of an online research article and the system will convert it to PDF format</p>
+          <p className="text-sm text-muted-foreground mb-4">{t('upload.webConverterDesc')}</p>
           <div className="flex gap-3">
             <input
               type="url"
               value={webUrl}
               onChange={(e) => setWebUrl(e.target.value)}
-              placeholder="https://example.com/article..."
+              placeholder={t('upload.urlPlaceholder')}
               className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
             />
             <button
@@ -112,7 +114,7 @@ export default function Upload({ onNavigate }: UploadProps) {
               disabled={!webUrl.trim()}
               className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Convert
+              {t('upload.convert')}
             </button>
           </div>
         </div>
@@ -120,7 +122,7 @@ export default function Upload({ onNavigate }: UploadProps) {
         {/* Uploaded Files List */}
         {uploadedFiles.length > 0 && (
           <div className="bg-card rounded-lg border border-border p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Uploaded Files ({uploadedFiles.length})</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">{t('upload.uploadedFiles')} ({uploadedFiles.length})</h3>
             <div className="space-y-3">
               {uploadedFiles.map((file, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -132,12 +134,12 @@ export default function Upload({ onNavigate }: UploadProps) {
                         {file.status === 'processing' ? (
                           <>
                             <Loader className="w-4 h-4 text-emerald-600 animate-spin" />
-                            <span className="text-sm text-muted-foreground">Processing and extracting text...</span>
+                            <span className="text-sm text-muted-foreground">{t('upload.processing')}</span>
                           </>
                         ) : (
                           <>
                             <CheckCircle className="w-4 h-4 text-green-600" />
-                            <span className="text-sm text-green-600">Processed successfully</span>
+                            <span className="text-sm text-green-600">{t('upload.processedSuccess')}</span>
                           </>
                         )}
                       </div>
@@ -159,13 +161,13 @@ export default function Upload({ onNavigate }: UploadProps) {
                   onClick={() => onNavigate('library')}
                   className="flex-1 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
                 >
-                  Go to Library
+                  {t('upload.goToLibrary')}
                 </button>
                 <button
                   onClick={() => setUploadedFiles([])}
                   className="px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Upload More
+                  {t('upload.uploadMore')}
                 </button>
               </div>
             )}
@@ -174,23 +176,23 @@ export default function Upload({ onNavigate }: UploadProps) {
 
         {/* Features Info */}
         <div className="mt-8 bg-emerald-50 rounded-lg p-6 border border-emerald-100">
-          <h4 className="font-semibold text-emerald-900 mb-3">What happens after upload?</h4>
+          <h4 className="font-semibold text-emerald-900 mb-3">{t('upload.whatHappensTitle')}</h4>
           <ul className="space-y-2 text-sm text-emerald-800">
             <li className="flex items-start gap-2">
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>System extracts text from PDF and identifies title, authors, and abstract</span>
+              <span>{t('upload.feature1')}</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>Automatic summary generation of key findings</span>
+              <span>{t('upload.feature2')}</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>Content indexing enables interactive Q&A</span>
+              <span>{t('upload.feature3')}</span>
             </li>
             <li className="flex items-start gap-2">
               <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-              <span>Topic and methodology identification for future sorting and comparison</span>
+              <span>{t('upload.feature4')}</span>
             </li>
           </ul>
         </div>

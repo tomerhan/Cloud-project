@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2, FileText, SplitSquareHorizontal } from 'lucide-react';
 import { Article } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ArticleViewerProps {
   articles: Article[];
@@ -8,7 +9,8 @@ interface ArticleViewerProps {
 }
 
 export default function ArticleViewer({ articles, onClose }: ArticleViewerProps) {
-  const [currentPage, setCurrentPage] = useState(0); 
+  const { t } = useLanguage();
+  const [currentPage, setCurrentPage] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -91,7 +93,7 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
               </div>
               
               <div className="bg-slate-50 border border-slate-100 p-4 rounded-lg">
-                <h3 className="font-bold text-slate-800 mb-2 text-sm uppercase tracking-wider">Abstract</h3>
+                <h3 className="font-bold text-slate-800 mb-2 text-sm uppercase tracking-wider">{t('viewer.abstract')}</h3>
                 <p className="text-xs md:text-sm text-slate-600 leading-relaxed font-serif text-justify">
                   {article.abstract}
                 </p>
@@ -105,7 +107,7 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
             </div>
           ) : currentPage === 0 && !isLeft ? (
             <div className="space-y-6">
-              <h3 className="font-bold text-slate-800 mb-4 text-lg font-serif">1. Introduction</h3>
+              <h3 className="font-bold text-slate-800 mb-4 text-lg font-serif">{t('viewer.introduction')}</h3>
               <div className="space-y-3 mb-8">
                 <div className="w-full h-3 bg-slate-200 rounded"></div>
                 <div className="w-full h-3 bg-slate-200 rounded"></div>
@@ -115,7 +117,7 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
               
               <div className="w-full aspect-video bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center text-slate-400">
                 <FileText className="w-8 h-8 mb-2 opacity-50" />
-                <span className="text-xs font-medium">Figure 1: Methodology Overview</span>
+                <span className="text-xs font-medium">{t('viewer.figure1')}</span>
               </div>
             </div>
           ) : (
@@ -155,18 +157,18 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
               <FileText className="w-5 h-5 text-red-600" />
               <div className="flex flex-col">
                 <span className="text-xs text-slate-400 font-medium tracking-wider uppercase">
-                  {isComparison ? 'Comparison View' : 'Document Viewer'}
+                  {isComparison ? t('viewer.comparisonView') : t('viewer.documentViewer')}
                 </span>
                 <span className="font-bold text-sm truncate max-w-[200px] md:max-w-md">
-                  {isComparison ? 'Multiple PDFs' : articles[0].title}
+                  {isComparison ? t('viewer.multiplePdfs') : articles[0].title}
                 </span>
               </div>
             </div>
-            
+
             {isComparison && (
               <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-700 rounded-lg border border-slate-600">
                 <SplitSquareHorizontal className="w-4 h-4 text-red-600" />
-                <span className="text-xs font-medium text-slate-300">Side-by-Side</span>
+                <span className="text-xs font-medium text-slate-300">{t('viewer.sideBySide')}</span>
               </div>
             )}
           </div>
@@ -174,10 +176,10 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
           <div className="flex items-center gap-2">
             {!showAll && (
               <div className="hidden md:flex items-center bg-slate-700 rounded-lg p-1 mr-2 border border-slate-600">
-                <button 
-                  onClick={handlePrev} 
+                <button
+                  onClick={handlePrev}
                   disabled={currentPage === 0}
-                  aria-label="Previous Page"
+                  aria-label={t('viewer.previousPage')}
                   className="p-1.5 rounded hover:bg-slate-600 disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -185,10 +187,10 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
                 <span className="text-xs font-mono px-3 border-x border-slate-600">
                   {currentPage * 2 + 1}-{currentPage * 2 + 2} / {totalPages}
                 </span>
-                <button 
+                <button
                   onClick={handleNext}
                   disabled={currentPage >= pagePairs - 1}
-                  aria-label="Next Page"
+                  aria-label={t('viewer.nextPage')}
                   className="p-1.5 rounded hover:bg-slate-600 disabled:opacity-30 transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -198,21 +200,21 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
 
             <button
               onClick={() => setShowAll(!showAll)}
-              aria-label={showAll ? "Switch to Focus View" : "Switch to Grid View"}
+              aria-label={showAll ? t('viewer.switchToFocusView') : t('viewer.switchToGridView')}
               className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg transition-colors flex items-center gap-2 text-xs font-medium"
             >
               {showAll ? (
-                <><Minimize2 className="w-4 h-4" /> <span className="hidden md:inline">Focus</span></>
+                <><Minimize2 className="w-4 h-4" /> <span className="hidden md:inline">{t('viewer.focus')}</span></>
               ) : (
-                <><Maximize2 className="w-4 h-4" /> <span className="hidden md:inline">Grid</span></>
+                <><Maximize2 className="w-4 h-4" /> <span className="hidden md:inline">{t('viewer.grid')}</span></>
               )}
             </button>
 
             <button
               onClick={toggleFullscreen}
               className="p-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg transition-colors hidden md:block"
-              title="Toggle Fullscreen"
-              aria-label={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              title={t('viewer.toggleFullscreen')}
+              aria-label={isFullscreen ? t('viewer.exitFullscreen') : t('viewer.enterFullscreen')}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -226,7 +228,7 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
                 }
                 onClose();
               }}
-              aria-label="Close Viewer"
+              aria-label={t('viewer.closeViewer')}
               className="p-1.5 hover:bg-red-500/20 text-slate-300 hover:text-red-400 rounded-lg transition-colors"
             >
               <X className="w-5 h-5" />
@@ -265,7 +267,7 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
                     )}
                   </div>
                   <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-                    Page {i + 1}
+                    {t('viewer.page')} {i + 1}
                   </div>
                 </div>
               ))}
@@ -275,9 +277,9 @@ export default function ArticleViewer({ articles, onClose }: ArticleViewerProps)
               
               {/* Mobile controls top */}
               <div className="flex md:hidden items-center justify-between w-full bg-white p-2 rounded-lg shadow-sm">
-                <button onClick={handlePrev} disabled={currentPage === 0} aria-label="Previous Page" className="p-2 disabled:opacity-30"><ChevronLeft className="w-5 h-5"/></button>
+                <button onClick={handlePrev} disabled={currentPage === 0} aria-label={t('viewer.previousPage')} className="p-2 disabled:opacity-30"><ChevronLeft className="w-5 h-5"/></button>
                 <span className="text-xs font-mono font-bold">{currentPage * 2 + 1} / {totalPages}</span>
-                <button onClick={handleNext} disabled={currentPage >= pagePairs - 1} aria-label="Next Page" className="p-2 disabled:opacity-30"><ChevronRight className="w-5 h-5"/></button>
+                <button onClick={handleNext} disabled={currentPage >= pagePairs - 1} aria-label={t('viewer.nextPage')} className="p-2 disabled:opacity-30"><ChevronRight className="w-5 h-5"/></button>
               </div>
 
               {isComparison ? (

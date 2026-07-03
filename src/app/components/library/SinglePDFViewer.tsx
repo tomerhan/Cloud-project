@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Maximize2, Minimize2, FileText, ExternalLink } from 'lucide-react';
 import { Article } from '../../data/mockData';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SinglePDFViewerProps {
   article: Article;
@@ -8,6 +9,7 @@ interface SinglePDFViewerProps {
 }
 
 export default function SinglePDFViewer({ article, onClose }: SinglePDFViewerProps) {
+  const { t } = useLanguage();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -41,7 +43,7 @@ export default function SinglePDFViewer({ article, onClose }: SinglePDFViewerPro
                 <FileText className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="font-medium text-foreground truncate max-w-[200px] sm:max-w-md">
-                PDF Viewer - {article.title}
+                {t('viewer.pdfViewerPrefix')} {article.title}
               </span>
             </div>
           </div>
@@ -55,13 +57,13 @@ export default function SinglePDFViewer({ article, onClose }: SinglePDFViewerPro
                 className="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Open in New Tab
+                {t('viewer.openNewTab')}
               </a>
             )}
             <button
               onClick={toggleFullscreen}
               className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              title={isFullscreen ? t('viewer.exitFullscreen') : t('viewer.enterFullscreen')}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -79,9 +81,9 @@ export default function SinglePDFViewer({ article, onClose }: SinglePDFViewerPro
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-muted rounded-lg border border-border">
               <FileText className="w-16 h-16 text-red-600 mb-4" />
-              <h3 className="text-xl font-bold text-foreground mb-2">No PDF File Available</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2">{t('viewer.noPdfTitle')}</h3>
               <p className="text-sm text-muted-foreground max-w-md">
-                This article was created manually or before real PDF uploads were enabled. There is no PDF document hosted for this paper.
+                {t('viewer.noPdfDesc')}
               </p>
             </div>
           )}

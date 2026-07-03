@@ -48,7 +48,7 @@ export default function Library() {
         setArticles(data);
       } catch (error) {
         console.error('Failed to load papers:', error);
-        toast.error('Failed to load papers from server');
+        toast.error(t('library.toastLoadFailed'));
       } finally {
         setIsLoading(false);
       }
@@ -119,7 +119,7 @@ export default function Library() {
   // Run the suggestion search for the chosen papers (merged keywords on the server).
   const runSuggestions = async () => {
     const ids = Array.from(suggestSelection);
-    if (ids.length === 0) { toast.error('Select at least one paper'); return; }
+    if (ids.length === 0) { toast.error(t('library.selectAtLeastOnePaper')); return; }
     setSuggestionsLoading(true);
     setHasSearched(true);
     try {
@@ -132,10 +132,10 @@ export default function Library() {
       );
       const data = mergeSuggestionResults(bundles);
       setSuggestions(data);
-      if (data.length === 0) toast.info('No related papers found for this selection');
+      if (data.length === 0) toast.info(t('library.noRelatedPapers'));
     } catch (err) {
       console.error('Failed to load suggestions:', err);
-      toast.error('Failed to fetch suggested papers');
+      toast.error(t('library.suggestionsFetchFailed'));
     } finally {
       setSuggestionsLoading(false);
     }
@@ -176,11 +176,11 @@ export default function Library() {
 
       // notify other parts of the app (ChatInterface) about the new upload
       try { window.dispatchEvent(new CustomEvent('uploaded-article', { detail: newArticle })); } catch { }
-      toast.success(`"${files[0].name}" uploaded successfully`);
+      toast.success(`"${files[0].name}" ${t('library.uploadSuccessSuffix')}`);
     } catch (err) {
       clearInterval(interval);
       console.error('Failed to upload paper:', err);
-      toast.error('Failed to upload paper to server');
+      toast.error(t('chat.toastUploadFailed'));
     } finally {
       setTimeout(() => setUploadProgress(null), 500);
     }
@@ -192,10 +192,10 @@ export default function Library() {
     try {
       await deletePaper(id);
       setArticles((prev) => prev.filter(a => a.id !== id));
-      toast.success('Article deleted');
+      toast.success(t('library.articleDeleted'));
     } catch (err) {
       console.error('Failed to delete paper:', err);
-      toast.error('Failed to delete paper');
+      toast.error(t('library.deleteFailed'));
     }
   };
 
@@ -211,7 +211,7 @@ export default function Library() {
       setTranslations((p) => ({ ...p, [id]: data }));
       setShowTranslated((p) => ({ ...p, [id]: true }));
     } catch {
-      toast.error('Translation failed. Showing the original text.');
+      toast.error(t('library.translationFailed'));
     } finally {
       setTranslatingId(null);
     }
@@ -237,8 +237,8 @@ export default function Library() {
               <Upload className="w-4 h-4 text-red-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-foreground">Uploading PDF…</p>
-              <p className="text-xs text-muted-foreground">{uploadProgress}% complete</p>
+              <p className="text-sm font-bold text-foreground">{t('library.uploadingPdf')}</p>
+              <p className="text-xs text-muted-foreground">{uploadProgress}{t('library.percentComplete')}</p>
             </div>
           </div>
           <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -259,7 +259,7 @@ export default function Library() {
                 <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-foreground text-xl">All Articles</h1>
+                <h1 className="font-bold text-foreground text-xl">{t('library.header')}</h1>
                 <p className="text-sm text-muted-foreground">{articles.length} articles · {filteredArticles.length} shown</p>
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function Library() {
                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-muted hover:bg-slate-200 dark:hover:bg-slate-700 text-foreground text-sm font-medium rounded-lg transition-colors border border-border"
               >
                 <Home className="w-4 h-4" />
-                <span>Back to Home</span>
+                <span>{t('settings.backHome')}</span>
               </button>
               {/* Compare button */}
               {selectedForCompare.size > 0 && (
@@ -278,7 +278,7 @@ export default function Library() {
                   className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors shadow-sm"
                 >
                   <Check className="w-3.5 h-3.5" />
-                  Compare ({selectedForCompare.size})
+                  {t('library.compare')} ({selectedForCompare.size})
                 </button>
               )}
               {/* View mode toggle */}
@@ -298,7 +298,7 @@ export default function Library() {
               </div>
               <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 border-slate-400 bg-slate-100 dark:bg-slate-800 text-foreground dark:border-slate-500 cursor-pointer">
                 <Upload className="w-3.5 h-3.5" />
-                Upload PDF
+                {t('chat.uploadPdf')}
                 <input type="file" accept=".pdf" multiple onChange={handleUpload} className="hidden" />
               </label>
             </div>
@@ -310,7 +310,7 @@ export default function Library() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search by title or author…"
+                placeholder={t('library.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-muted focus:bg-card transition-all"
@@ -325,7 +325,7 @@ export default function Library() {
               >
                 {allTopics.map((topic) => (
                   <option key={topic} value={topic}>
-                    {topic === 'all' ? 'All Topics' : topic}
+                    {topic === 'all' ? t('library.allTopics') : topic}
                   </option>
                 ))}
               </select>
@@ -343,14 +343,14 @@ export default function Library() {
         {isLoading ? (
           <div className="bg-card border border-border rounded-2xl p-12 text-center shadow-sm flex flex-col items-center justify-center">
             <Loader2 className="w-10 h-10 text-red-600 animate-spin mb-4" />
-            <h3 className="font-bold text-foreground mb-1">Loading articles...</h3>
-            <p className="text-sm text-muted-foreground">Connecting to the database.</p>
+            <h3 className="font-bold text-foreground mb-1">{t('library.loadingArticles')}</h3>
+            <p className="text-sm text-muted-foreground">{t('library.connectingDb')}</p>
           </div>
         ) : filteredArticles.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-12 text-center shadow-sm">
             <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-bold text-foreground mb-1">No articles found</h3>
-            <p className="text-sm text-muted-foreground">Try a different search term or upload new papers.</p>
+            <h3 className="font-bold text-foreground mb-1">{t('library.noArticlesFound')}</h3>
+            <p className="text-sm text-muted-foreground">{t('library.tryDifferentSearch')}</p>
           </div>
         ) : viewMode === 'grid' ? (
           /* GRID VIEW */
@@ -371,7 +371,7 @@ export default function Library() {
                       <div className="flex items-center gap-1.5 mb-2">
                         <Star className="w-3.5 h-3.5 text-red-600 fill-amber-500" />
                         <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
-                          Most Cited
+                          {t('library.mostCited')}
                         </span>
                       </div>
                     )}
@@ -381,12 +381,12 @@ export default function Library() {
                           {article.title}
                         </h3>
                         <p className="text-xs text-muted-foreground font-medium">
-                          {article.authors[0]} et al. · {article.year}
+                          {article.authors[0]} {t('chat.etAl')} · {article.year}
                         </p>
                       </div>
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleSuggestSelection(article.id); }}
-                        title={isSelected ? 'Selected for suggestions' : 'Select for suggestions'}
+                        title={isSelected ? t('library.selectedForSuggestions') : t('library.selectForSuggestions')}
                         className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-red-400'}`}
                       >
                         {isSelected && <Check className="w-4 h-4" strokeWidth={3} />}
@@ -395,9 +395,9 @@ export default function Library() {
 
                     {/* Stats row */}
                     <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
-                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {article.authors.length} authors</span>
+                      <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {article.authors.length} {t('library.authorsSuffix')}</span>
                       <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {article.year}</span>
-                      <span className="flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" /> {article.citations} citations</span>
+                      <span className="flex items-center gap-1"><TrendingUp className="w-3.5 h-3.5" /> {article.citations} {t('library.citationsSuffix')}</span>
                     </div>
 
                     {/* Topics */}
@@ -414,7 +414,7 @@ export default function Library() {
                       onClick={() => setExpandedId(isExpanded ? null : article.id)}
                       className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground hover:text-foreground transition-colors mb-2"
                     >
-                      <span>Auto-Summary</span>
+                      <span>{t('chat.autoSummary')}</span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
                     {isExpanded && (() => {
@@ -427,7 +427,7 @@ export default function Library() {
                             if (a && a.length > 0) {
                               return a.split('.').slice(0, 2).join('. ') + (a.split('.').length > 2 ? '…' : '');
                             }
-                            return article.keyFindings?.slice(0, 2).join('; ') || 'No summary available.';
+                            return article.keyFindings?.slice(0, 2).join('; ') || t('library.noSummaryAvailable');
                           })();
                       return (
                         <div className="space-y-3 mt-2 border-t border-border pt-3">
@@ -467,7 +467,7 @@ export default function Library() {
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteArticle(article.id); }}
                         className="p-2 rounded-lg text-muted-foreground hover:text-red-600 transition-colors"
-                        title="Delete article"
+                        title={t('library.deleteArticle')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -492,15 +492,15 @@ export default function Library() {
                 >
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleSuggestSelection(article.id); }}
-                    title={isSelected ? 'Selected for suggestions' : 'Select for suggestions'}
+                    title={isSelected ? t('library.selectedForSuggestions') : t('library.selectForSuggestions')}
                     className={`shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-red-600 border-red-600 text-white' : 'border-slate-300 dark:border-slate-600 hover:border-red-400'}`}
                   >
                     {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
                   </button>
-                  <ArticleIcon size="md" title="Article">
+                  <ArticleIcon size="md" title={t('chat.articleIconTitle')}>
                     <FileText className="w-5 h-5 text-current" />
                   </ArticleIcon>
-                  <button onClick={(e) => { e.stopPropagation(); handleDeleteArticle(article.id); }} className="p-2 text-muted-foreground hover:text-red-600 rounded-md" title="Delete">
+                  <button onClick={(e) => { e.stopPropagation(); handleDeleteArticle(article.id); }} className="p-2 text-muted-foreground hover:text-red-600 rounded-md" title={t('library.delete')}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <div className="flex-1 min-w-0">
@@ -509,16 +509,16 @@ export default function Library() {
                       {isBest && (
                         <span className="flex items-center gap-1 flex-shrink-0">
                           <Star className="w-3 h-3 text-red-600 fill-amber-500" />
-                          <span className="text-[10px] font-bold text-amber-600">Top</span>
+                          <span className="text-[10px] font-bold text-amber-600">{t('library.top')}</span>
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                      <span>{article.authors[0]} et al.</span>
+                      <span>{article.authors[0]} {t('chat.etAl')}</span>
                       <span>·</span>
                       <span>{article.year}</span>
                       <span>·</span>
-                      <span>{article.citations} citations</span>
+                      <span>{article.citations} {t('library.citationsSuffix')}</span>
                     </div>
                   </div>
                 </div>
@@ -533,10 +533,10 @@ export default function Library() {
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
             <h2 className="font-bold text-foreground text-lg mb-2 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-red-600" />
-              Find Suggested Papers
+              {t('library.findSuggestedPapers')}
             </h2>
             <p className="text-sm text-muted-foreground mb-3">
-              Tick the papers above to base the search on, then search for the most-cited related work.
+              {t('library.suggestionsDesc')}
             </p>
 
             {/* Search button */}
@@ -546,8 +546,8 @@ export default function Library() {
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors mb-4"
             >
               {suggestionsLoading
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Searching…</>
-                : <><Search className="w-4 h-4" /> Find Suggestions ({suggestSelection.size})</>
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('library.searching')}</>
+                : <><Search className="w-4 h-4" /> {t('library.findSuggestions')} ({suggestSelection.size})</>
               }
             </button>
 
@@ -568,17 +568,17 @@ export default function Library() {
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm line-clamp-2">{s.title}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">
-                        {s.authors[0] || 'Unknown'}{s.year ? ` · ${s.year}` : ''}
+                        {s.authors[0] || t('library.unknown')}{s.year ? ` · ${s.year}` : ''}
                       </div>
                       <div className="flex items-center gap-1 text-[11px] font-bold text-red-600 mt-1">
-                        <TrendingUp className="w-3 h-3" /> {s.citations.toLocaleString()} citations
+                        <TrendingUp className="w-3 h-3" /> {s.citations.toLocaleString()} {t('library.citationsSuffix')}
                       </div>
                     </div>
                   </a>
                 ))}
               </div>
             ) : hasSearched ? (
-              <p className="text-sm text-muted-foreground py-2">No related papers found for this selection.</p>
+              <p className="text-sm text-muted-foreground py-2">{t('library.noRelatedPapers')}</p>
             ) : null}
           </div>
         )}
