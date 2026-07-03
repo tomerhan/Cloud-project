@@ -27,7 +27,7 @@ import StudentPerformancePanel from '../dashboard/StudentPerformancePanel';
 import { toast } from 'sonner';
 import { getShortSummary, extractTextFromPDF } from '../../../utils/textUtils';
 import ArticleIcon from '../ui/ArticleIcon';
-import { CHAT_LABEL } from '../../config/nav';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Interface defining the structure of an article group for organizing research papers
 interface ArticleGroup {
@@ -55,6 +55,7 @@ export default function ChatInterface() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { id: studentId } = useParams();
+  const { t } = useLanguage();
   // Check if the current view is lecturer view
   const isLecturerView = user?.role === 'lecturer';
 
@@ -174,7 +175,7 @@ export default function ChatInterface() {
         }
       } catch (error) {
         console.error('Failed to load papers in ChatInterface:', error);
-        toast.error('Failed to load papers');
+        toast.error(t('chat.toastFailedLoadPapers'));
       }
     };
     loadPapers();
@@ -237,7 +238,7 @@ export default function ChatInterface() {
 
   // Function to delete an article group (prevents deleting the last group)
   const deleteGroup = (gid: string) => {
-    if (articleGroups.length <= 1) { alert('Cannot delete the last group.'); return; }
+    if (articleGroups.length <= 1) { alert(t('chat.alertCannotDeleteLastGroup')); return; }
     setArticleGroups((p) => p.filter((g) => g.id !== gid));
     if (currentGroupId === gid) setCurrentGroupId(articleGroups.find((g) => g.id !== gid)!.id);
   };
@@ -279,7 +280,7 @@ export default function ChatInterface() {
     if (!text.trim()) return;
     const hasAnalyzedSelected = Array.from(selectedArticles).some((id) => analyzedArticles.has(id));
     if (!hasAnalyzedSelected) {
-      toast.error('Analyze at least one selected PDF before chatting');
+      toast.error(t('chat.toastAnalyzeFirst'));
       return;
     }
 
@@ -340,11 +341,11 @@ export default function ChatInterface() {
       setUploadedFiles((prev) => [na, ...prev]);
       setAnalyzedArticles((prev) => new Set([...prev, na.id]));
       setSelectedArticles((prev) => new Set([...prev, na.id]));
-      toast.success(`"${files[0].name}" added to library with extracted text`);
+      toast.success(`"${files[0].name}" ${t('chat.toastAddedToLibrary')}`);
     } catch (err) {
       clearInterval(interval);
       console.error('Failed to upload paper:', err);
-      toast.error('Failed to upload paper to server');
+      toast.error(t('chat.toastUploadFailed'));
     } finally {
       setTimeout(() => setUploadProgress(null), 600);
     }
@@ -352,13 +353,13 @@ export default function ChatInterface() {
 
   // Function to handle exporting the chat as PDF
   const handleExportChat = () => {
-    toast.success('Exporting chat as PDF...', { description: 'Download will start shortly.' });
+    toast.success(t('chat.toastExportTitle'), { description: t('chat.toastExportDesc') });
   };
 
   // Function to handle saving the analysis with a custom name
   const handleSaveAnalysis = () => {
     if (!saveName.trim()) return;
-    toast.success(`Analysis "${saveName}" saved successfully!`);
+    toast.success(t('chat.toastAnalysisSaved').replace('{name}', saveName));
     setShowSaveName(false);
     setSaveName('');
   };
@@ -368,7 +369,7 @@ export default function ChatInterface() {
   const openInChatAnalyzer = () => {
     const ids = Array.from(selectedArticles);
     if (ids.length === 0) {
-      toast.error('Select at least one article first');
+      toast.error(t('chat.toastSelectArticleFirst'));
       return;
     }
     try {
@@ -415,8 +416,8 @@ export default function ChatInterface() {
   useEffect(() => {
     if (comprehensionPercent === 100 && !celebratedRef.current) {
       celebratedRef.current = true;
-      toast.success('100% comprehension reached!', {
-        description: 'Outstanding work — you mastered this material.',
+      toast.success(t('chat.toastComprehensionTitle'), {
+        description: t('chat.toastComprehensionDesc'),
       });
     } else if (comprehensionPercent < 100) {
       celebratedRef.current = false;
@@ -435,8 +436,8 @@ export default function ChatInterface() {
               <Upload className="w-4 h-4 text-red-600" />
             </div>
             <div>
-              <p className="text-sm font-bold text-foreground">Uploading PDF...</p>
-              <p className="text-xs text-muted-foreground">{uploadProgress}% complete</p>
+              <p className="text-sm font-bold text-foreground">{t('chat.uploadingPdf')}</p>
+              <p className="text-xs text-muted-foreground">{uploadProgress}{t('chat.percentComplete')}</p>
             </div>
           </div>
           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -452,8 +453,8 @@ export default function ChatInterface() {
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-foreground">Research Assistant</h1>
-              <p className="text-xs text-muted-foreground">Reviewing Student Research</p>
+              <h1 className="font-bold text-foreground">{t('chat.lecturerHeaderTitle')}</h1>
+              <p className="text-xs text-muted-foreground">{t('chat.lecturerHeaderSubtitle')}</p>
             </div>
           </div>
         ) : (
@@ -467,9 +468,9 @@ export default function ChatInterface() {
               </svg>
             </div>
             <div>
-              <h1 className="font-bold text-foreground">{CHAT_LABEL}</h1>
+              <h1 className="font-bold text-foreground">{t('nav.chat')}</h1>
               <p className="text-xs text-muted-foreground">
-                {selectedArticles.size} article{selectedArticles.size !== 1 && 's'} in context
+                {selectedArticles.size} {selectedArticles.size !== 1 ? t('chat.articlePlural') : t('chat.articleSingular')}
               </p>
             </div>
           </div>
@@ -483,16 +484,16 @@ export default function ChatInterface() {
                 onClick={() => setShowSaveName(true)}
                 className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 border-slate-400 bg-slate-100 dark:bg-slate-800 text-foreground dark:border-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:shadow-sm hover:scale-105"
               >
-                <BookmarkPlus className="w-3.5 h-3.5" /> Save
+                <BookmarkPlus className="w-3.5 h-3.5" /> {t('chat.save')}
               </button>
               <button
                 onClick={handleExportChat}
                 className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 border-slate-400 bg-slate-100 dark:bg-slate-800 text-foreground dark:border-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:shadow-sm hover:scale-105"
               >
-                <Download className="w-3.5 h-3.5" /> Export
+                <Download className="w-3.5 h-3.5" /> {t('chat.export')}
               </button>
               <label className="flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 text-sm font-bold transition-all active:scale-95 border-slate-400 bg-slate-100 dark:bg-slate-800 text-foreground dark:border-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 hover:shadow-sm hover:scale-105 cursor-pointer">
-                <Upload className="w-3.5 h-3.5" /> Upload PDF
+                <Upload className="w-3.5 h-3.5" /> {t('chat.uploadPdf')}
                 <input type="file" accept=".pdf" multiple onChange={handleFileUpload} className="hidden" />
               </label>
             </>
@@ -501,10 +502,10 @@ export default function ChatInterface() {
           {isCreatingGroup && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-card rounded-2xl shadow-xl w-full max-w-md p-6 border border-border max-h-[90vh] overflow-y-auto">
-                <h3 className="font-bold text-foreground mb-4">Create New Group</h3>
+                <h3 className="font-bold text-foreground mb-4">{t('chat.createNewGroup')}</h3>
                 <input
                   type="text"
-                  placeholder="Group name..."
+                  placeholder={t('chat.groupNamePlaceholder')}
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
                   className="w-full px-4 py-3 border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4 bg-background text-foreground"
@@ -512,7 +513,7 @@ export default function ChatInterface() {
                 />
                 {/* Article selection for group */}
                 <div className="mb-4">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Select Articles</p>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">{t('chat.selectArticles')}</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {uploadedFiles.slice(0, 6).map((article) => {
                       const isSelected = groupArticleSelection.has(article.id);
@@ -542,13 +543,13 @@ export default function ChatInterface() {
                     disabled={!newGroupName.trim()}
                     className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 hover:border-red-800 hover:shadow-md hover:scale-105 disabled:opacity-50 transition-all"
                   >
-                    Create
+                    {t('chat.create')}
                   </button>
                   <button
                     onClick={() => { setIsCreatingGroup(false); setNewGroupName(''); setGroupArticleSelection(new Set()); }}
                     className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold hover:bg-slate-200 hover:text-slate-700 hover:shadow-sm hover:scale-105 transition-all"
                   >
-                    Cancel
+                    {t('chat.cancel')}
                   </button>
                 </div>
               </div>
@@ -565,7 +566,7 @@ export default function ChatInterface() {
                   {user?.name?.substring(0, 2).toUpperCase() || 'U'}
                 </div>
                 <span className="text-sm font-bold text-foreground hidden sm:block bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600">
-                  {user?.name || 'Lecturer'}
+                  {user?.name || t('chat.lecturerFallback')}
                 </span>
               </button>
               {showUserMenu && (
@@ -575,7 +576,7 @@ export default function ChatInterface() {
                       onClick={() => navigate('/lecturer')}
                       className="w-full px-4 py-2.5 bg-emerald-100 dark:bg-emerald-900 hover:bg-emerald-200 dark:hover:bg-emerald-800 border border-emerald-300 dark:border-emerald-600 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md flex items-center gap-2 text-sm text-emerald-800 dark:text-emerald-200 font-bold transition-all rounded-lg"
                     >
-                      <ExternalLink className="w-4 h-4" /> Back to Dashboard
+                      <ExternalLink className="w-4 h-4" /> {t('chat.backToDashboard')}
                     </button>
                   )}
                 </div>
@@ -596,8 +597,8 @@ export default function ChatInterface() {
                     <BookmarkPlus className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-foreground">Save Analysis</h3>
-                    <p className="text-xs text-muted-foreground">Give this session a memorable name</p>
+                    <h3 className="font-bold text-foreground">{t('chat.saveAnalysisTitle')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('chat.saveAnalysisSubtitle')}</p>
                   </div>
                 </div>
                 <input
@@ -606,12 +607,12 @@ export default function ChatInterface() {
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleSaveAnalysis(); if (e.key === 'Escape') setShowSaveName(false); }}
-                  placeholder="e.g. NLP Transformer Deep Dive..."
+                  placeholder={t('chat.saveAnalysisPlaceholder')}
                   className="w-full px-4 py-3 border border-input rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 mb-4 bg-background text-foreground"
                 />
                 <div className="flex gap-3">
-                  <button onClick={handleSaveAnalysis} disabled={!saveName.trim()} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 hover:border-red-800 hover:shadow-md hover:scale-105 disabled:opacity-50 transition-all">Save</button>
-                  <button onClick={() => { setShowSaveName(false); setSaveName(''); }} className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold hover:bg-slate-200 hover:text-slate-700 hover:shadow-sm hover:scale-105 transition-all">Cancel</button>
+                  <button onClick={handleSaveAnalysis} disabled={!saveName.trim()} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 hover:border-red-800 hover:shadow-md hover:scale-105 disabled:opacity-50 transition-all">{t('chat.save')}</button>
+                  <button onClick={() => { setShowSaveName(false); setSaveName(''); }} className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold hover:bg-slate-200 hover:text-slate-700 hover:shadow-sm hover:scale-105 transition-all">{t('chat.cancel')}</button>
                 </div>
               </div>
             </div>
@@ -619,7 +620,7 @@ export default function ChatInterface() {
 
           {isLecturerView && (
             <StudentPerformancePanel
-              studentName={studentId ? `Student ${studentId}` : 'Student'}
+              studentName={studentId ? `${t('chat.studentLabel')} ${studentId}` : t('chat.studentLabel')}
               articles={uploadedFiles}
               messages={messages}
               analyzedIds={analyzedArticles}
@@ -631,15 +632,15 @@ export default function ChatInterface() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-border pb-4">
               <div className="flex items-center justify-between w-full lg:w-auto">
                 <div className="flex items-center gap-3">
-                  <ArticleIcon size="md" title="Article">
+                  <ArticleIcon size="md" title={t('chat.articleIconTitle')}>
                     <FileText className="w-5 h-5 text-current" />
                   </ArticleIcon>
                   <div>
                     <h2 className="text-lg font-bold text-foreground">
-                      {isLecturerView ? 'Articles Read' : 'Library'}
+                      {isLecturerView ? t('chat.articlesReadTitle') : t('chat.libraryTitle')}
                     </h2>
                     <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                      {displayedArticles.length} articles total
+                      {displayedArticles.length} {t('chat.articlesTotalSuffix')}
                     </p>
                   </div>
                 </div>
@@ -649,7 +650,7 @@ export default function ChatInterface() {
               <div className="flex flex-wrap items-center gap-3">
                 <input
                   type="text"
-                  placeholder="Search articles..."
+                  placeholder={t('chat.searchArticlesPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="text-sm bg-muted/40 dark:bg-slate-800/40 border border-border dark:border-slate-700/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-red-600/50 focus:border-red-500 outline-none text-foreground placeholder:text-muted-foreground transition-all shadow-inner w-full sm:w-48"
@@ -659,16 +660,16 @@ export default function ChatInterface() {
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="text-sm bg-muted/40 dark:bg-slate-800/40 border border-border dark:border-slate-700/50 rounded-xl px-4 py-2 focus:ring-2 focus:ring-red-600/50 focus:border-red-500 outline-none text-foreground cursor-pointer transition-all shadow-inner"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="title">A-Z (Title)</option>
+                  <option value="newest">{t('chat.sortNewest')}</option>
+                  <option value="oldest">{t('chat.sortOldest')}</option>
+                  <option value="title">{t('chat.sortTitle')}</option>
                 </select>
                 {/* arrows: moved next to selection box as requested */}
                 <div className="flex items-center gap-2">
-                  <button onClick={() => scrollRow('left')} className={arrowBtnClass} aria-label="Scroll left">
+                  <button onClick={() => scrollRow('left')} className={arrowBtnClass} aria-label={t('chat.scrollLeft')}>
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <button onClick={() => scrollRow('right')} className={arrowBtnClass} aria-label="Scroll right">
+                  <button onClick={() => scrollRow('right')} className={arrowBtnClass} aria-label={t('chat.scrollRight')}>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -684,8 +685,8 @@ export default function ChatInterface() {
               if (analyzedOnly.length === 0) {
                 return (
                   <div className="py-12 text-center text-muted-foreground bg-muted/50 rounded-xl border border-dashed border-border">
-                    <p className="text-sm font-bold">No articles in Research Chat yet</p>
-                    <p className="text-xs mt-1">Select a paper and click Analyze to see it here.</p>
+                    <p className="text-sm font-bold">{t('chat.noArticlesTitle')}</p>
+                    <p className="text-xs mt-1">{t('chat.noArticlesSubtitle')}</p>
                   </div>
                 );
               }
@@ -748,18 +749,18 @@ export default function ChatInterface() {
                               className={`flex-1 flex flex-col bg-muted/80 border border-border/60 rounded-lg p-3 mb-3 transition-colors ${canExpand ? 'cursor-pointer hover:bg-muted/90' : ''}`}
                             >
                               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1.5 shrink-0">
-                                <AlignLeft className="w-3 h-3 text-red-600" /> Auto-Summary
+                                <AlignLeft className="w-3 h-3 text-red-600" /> {t('chat.autoSummary')}
                               </span>
                               <p className={`text-xs text-foreground/80 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
                                 {getShortSummary(article)}
                               </p>
-                              {canExpand && <span className="text-[10px] text-red-500 font-medium mt-1">{isExpanded ? 'Show less' : 'Show more'}</span>}
+                              {canExpand && <span className="text-[10px] text-red-500 font-medium mt-1">{isExpanded ? t('chat.showLess') : t('chat.showMore')}</span>}
                             </div>
 
                             {isLecturerView && (
                               <div className="mb-3 shrink-0">
                                 <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Student Comprehension</span>
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{t('chat.studentComprehension')}</span>
                                   <span className="text-xs font-bold text-foreground tabular-nums">{perArticleComprehension[article.id] ?? 0}%</span>
                                 </div>
                                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden border border-border">
@@ -775,7 +776,7 @@ export default function ChatInterface() {
                               onClick={(e) => { e.stopPropagation(); setSinglePDFView(article); }}
                               className="w-full px-3 py-2.5 text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700 hover:bg-slate-700 hover:text-white rounded-lg transition-colors mt-auto shrink-0 flex items-center justify-center gap-2"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" /> View Full PDF
+                              <ExternalLink className="w-3.5 h-3.5" /> {t('chat.viewFullPdf')}
                             </button>
                           </div>
                         </div>
@@ -794,7 +795,7 @@ export default function ChatInterface() {
                   disabled={selectedArticles.size === 0}
                   className="md:px-8 py-3.5 bg-slate-800 text-white rounded-xl font-bold hover:bg-slate-900 hover:border-slate-600 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50"
                 >
-                  Analyze {selectedArticles.size > 0 && `(${selectedArticles.size})`}
+                  {t('chat.analyze')} {selectedArticles.size > 0 && `(${selectedArticles.size})`}
                 </button>
               </div>
             )}
@@ -806,7 +807,7 @@ export default function ChatInterface() {
               articles={uploadedFiles}
               selectedArticleIds={selectedArticles}
               disabled={!canChat}
-              disabledReason="Analyze a selected PDF first to unlock guided questions"
+              disabledReason={t('chat.guidedQuestionsDisabledReason')}
             />
           )}
 
@@ -815,8 +816,8 @@ export default function ChatInterface() {
             <div className="bg-card border border-border rounded-2xl shadow-sm p-4 flex flex-col md:flex-row items-center gap-5">
               <div className="flex-1 w-full bg-muted border border-border p-3.5 rounded-2xl flex items-center gap-4">
                 <div className="flex flex-col flex-shrink-0">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Questions Difficulty</span>
-                  <span className="text-sm font-bold text-foreground">{chatDepth === 1 ? 'Easy' : chatDepth === 2 ? 'Medium' : 'Hard'}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('chat.questionsDifficulty')}</span>
+                  <span className="text-sm font-bold text-foreground">{chatDepth === 1 ? t('chat.easy') : chatDepth === 2 ? t('chat.medium') : t('chat.hard')}</span>
                 </div>
                 <div className="w-px h-7 bg-border" />
                 <div className="flex-1 relative pt-5 pb-1">
@@ -827,7 +828,7 @@ export default function ChatInterface() {
                     className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-red-600"
                   />
                   <div className="absolute top-0 left-0 w-full flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
-                    <span>Easy</span><span>Medium</span><span>Hard</span>
+                    <span>{t('chat.easy')}</span><span>{t('chat.medium')}</span><span>{t('chat.hard')}</span>
                   </div>
                 </div>
               </div>
@@ -836,7 +837,7 @@ export default function ChatInterface() {
                 disabled={selectedArticles.size === 0}
                 className="w-full md:w-auto md:px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50"
               >
-                Create Chat {selectedArticles.size > 0 && `(${selectedArticles.size})`}
+                {t('chat.createChat')} {selectedArticles.size > 0 && `(${selectedArticles.size})`}
               </button>
             </div>
           )}
@@ -849,8 +850,8 @@ export default function ChatInterface() {
           <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-5 w-full">
             <div className="flex-1 w-full bg-muted border border-border p-3.5 rounded-2xl flex items-center gap-4">
               <div className="flex flex-col flex-shrink-0">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Analysis Depth</span>
-                <span className="text-sm font-bold text-foreground">{getDepthLabel(analysisDepth)}</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('chat.analysisDepthLabel')}</span>
+                <span className="text-sm font-bold text-foreground">{analysisDepth === 1 ? t('chat.fast') : analysisDepth === 2 ? t('chat.regular') : t('chat.deep')}</span>
               </div>
               <div className="w-px h-7 bg-border" />
               <div className="flex-1 relative pt-5 pb-1">
@@ -861,7 +862,7 @@ export default function ChatInterface() {
                   className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer accent-red-600"
                 />
                 <div className="absolute top-0 left-0 w-full flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
-                  <span>Fast</span><span>Regular</span><span>Deep</span>
+                  <span>{t('chat.fast')}</span><span>{t('chat.regular')}</span><span>{t('chat.deep')}</span>
                 </div>
               </div>
             </div>
@@ -872,7 +873,7 @@ export default function ChatInterface() {
                 disabled={selectedArticles.size < 2}
                 className="flex-1 md:px-8 py-3.5 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 hover:border-red-800 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50"
               >
-                Compare
+                {t('chat.compare')}
               </button>
             </div>
           </div>
