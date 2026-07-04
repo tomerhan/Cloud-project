@@ -68,6 +68,26 @@ export async function deletePaper(id: string): Promise<void> {
   await api.delete(`/papers/${id}`);
 }
 
+// Update editable paper fields (topics / title) — lecturer course-library mgmt.
+export async function updatePaper(id: string, data: { topics?: string[]; title?: string }): Promise<Article> {
+  const response = await api.put(`/papers/${id}`, data);
+  const paper = response.data;
+  return {
+    id: paper._id,
+    title: paper.title,
+    authors: paper.authors || ['Unknown Author'],
+    abstract: paper.abstract || '',
+    uploadDate: paper.createdAt ? paper.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+    pdfUrl: paper.fileUrl || '#',
+    topics: paper.topics || paper.tags || [],
+    keywords: paper.keywords || [],
+    methodology: paper.methodology || 'Unknown',
+    keyFindings: paper.keyFindings || [],
+    citations: paper.citations || 0,
+    year: paper.year || new Date().getFullYear(),
+  };
+}
+
 export async function queryPaper(id: string, question: string, guide?: string, language?: string): Promise<string> {
   const response = await api.post(`/papers/${id}/query`, { question, guide, language });
   return response.data.answer;

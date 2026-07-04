@@ -19,3 +19,13 @@ html, body, #root {
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
+
+/* --- Dark-mode red-text contrast (WCAG AA) ---
+   The top SUS complaint was red text on near-black being hard to read.
+   text-red-600 (#dc2626) on the dark bg is ~4:1, below the 4.5:1 AA threshold.
+   Lighten red used as TEXT/ICONS in dark mode to red-400 (#f87171, ~6:1).
+   Solid red buttons (bg-red-600 + text-white) are unaffected. */
+.dark .text-red-600 { color: #f87171; }
+.dark .text-red-500 { color: #f87171; }
+/* red-700 text sits on dark-red tinted chips — nudge to red-300 for legibility. */
+.dark .text-red-700 { color: #fca5a5; }

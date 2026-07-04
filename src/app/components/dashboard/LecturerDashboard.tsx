@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
+import LecturerLibraryPanel from './LecturerLibraryPanel';
 
 interface Student {
   id: string;
@@ -310,6 +311,9 @@ export default function LecturerDashboard() {
               )}
             </div>
           </section>
+
+          {/* Course library management (upload / delete / edit topics) */}
+          <LecturerLibraryPanel />
 
         </div>
       </main>
