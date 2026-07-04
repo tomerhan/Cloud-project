@@ -230,10 +230,10 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
           <div className="mx-6 mt-4 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl p-4 flex items-start gap-3 flex-shrink-0">
             <Info className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-xs font-bold text-amber-800 mb-1">{t('analysis.compareModal.howAiGeneratedTitle')}</p>
-              <p className="text-xs text-amber-700 leading-relaxed">{t('analysis.compareModal.explanationText')}</p>
+              <p className="text-xs font-bold text-amber-800 dark:text-amber-300 mb-1">{t('analysis.compareModal.howAiGeneratedTitle')}</p>
+              <p className="text-xs text-amber-700 dark:text-amber-200 leading-relaxed">{t('analysis.compareModal.explanationText')}</p>
             </div>
-            <button onClick={() => setShowExplanation(false)} className="text-amber-400 hover:text-amber-600 ml-auto flex-shrink-0">
+            <button onClick={() => setShowExplanation(false)} className="text-amber-500 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-100 ml-auto flex-shrink-0">
               <X className="w-4 h-4" />
             </button>
           </div>

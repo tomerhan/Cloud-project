@@ -162,10 +162,10 @@ export default function AnalysisStagesDialog({ type, onClose, onComplete }: Anal
             <div className="flex items-start gap-2">
               <Lightbulb className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-1">
+                <p className="text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-1">
                   {t('analysis.stages.didYouKnow')}
                 </p>
-                <p className="text-xs text-amber-800 leading-relaxed">{TRIVIA[triviaIdx]}</p>
+                <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">{TRIVIA[triviaIdx]}</p>
               </div>
             </div>
           </div>
