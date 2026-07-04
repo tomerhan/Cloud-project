@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Users, FileText, Search, ArrowRight, BookOpen, LogOut, Sparkles, Sun, Moon } from 'lucide-react';
+import { Users, FileText, Search, ArrowRight, BookOpen, LogOut, Sparkles, Sun, Moon, HelpCircle, Languages } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
 import LecturerLibraryPanel from './LecturerLibraryPanel';
+import GuideModal from '../ui/GuideModal';
 
 interface Student {
   id: string;
@@ -20,8 +21,9 @@ interface Student {
 export default function LecturerDashboard() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const navigate = useNavigate();
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,13 +121,42 @@ export default function LecturerDashboard() {
           </div>
         </div>
 
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 hover:shadow-lg hover:scale-105 rounded-lg transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-          {t('dashboard.signOut')}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Guide */}
+          <button
+            onClick={() => setIsGuideOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium border border-red-200 dark:border-red-900/30"
+            title={t('topbar.guide')}
+          >
+            <HelpCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('topbar.guide')}</span>
+          </button>
+          {/* Language switcher */}
+          <button
+            onClick={() => setLanguage(language === 'he' ? 'en' : 'he')}
+            className="p-2 rounded-lg bg-muted border border-border hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold"
+            title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+          >
+            <Languages className="w-4 h-4" />
+            <span>{language === 'he' ? 'EN' : 'עב'}</span>
+          </button>
+          {/* Theme toggle */}
+          <button
+            onClick={handleThemeToggle}
+            className="p-2 rounded-lg bg-muted border border-border hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-muted-foreground hover:text-foreground"
+            title={t('dashboard.displayMode')}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          {/* Sign out */}
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-red-600 hover:shadow-lg hover:scale-105 rounded-lg transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            {t('dashboard.signOut')}
+          </button>
+        </div>
       </header>
 
       {/* ─── Main Dashboard Content ─── */}
@@ -317,6 +348,8 @@ export default function LecturerDashboard() {
 
         </div>
       </main>
+
+      <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
   );
 }
