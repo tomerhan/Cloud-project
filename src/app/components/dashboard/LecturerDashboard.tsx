@@ -349,7 +349,7 @@ export default function LecturerDashboard() {
         </div>
       </main>
 
-      <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      <GuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} variant="lecturer" />
     </div>
   );
 }

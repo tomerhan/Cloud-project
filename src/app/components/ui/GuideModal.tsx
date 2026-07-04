@@ -1,37 +1,46 @@
 import React, { useState } from 'react';
 import {
-  X, BookOpen, MessageSquare, BarChart2, ChevronRight, UploadCloud, Search, CheckCircle2, FileText
+  X, BookOpen, MessageSquare, BarChart2, ChevronRight, UploadCloud, Search, CheckCircle2,
+  FileText, Users, Trash2, LayoutDashboard
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
 interface GuideModalProps {
   isOpen: boolean;
   onClose: () => void;
+  variant?: 'student' | 'lecturer';
 }
 
-type TabType = 'library' | 'chat' | 'analyzer';
+type TabType = 'library' | 'chat' | 'analyzer' | 'dashboard' | 'students';
 
-export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('library');
+export default function GuideModal({ isOpen, onClose, variant = 'student' }: GuideModalProps) {
+  const isLecturer = variant === 'lecturer';
+  const [activeTab, setActiveTab] = useState<TabType>(isLecturer ? 'dashboard' : 'library');
   const { t } = useLanguage();
 
   if (!isOpen) return null;
 
-  const tabs: { id: TabType; icon: React.ElementType; label: string }[] = [
-    { id: 'library', icon: BookOpen, label: t('guide.tabLibrary') },
-    { id: 'chat', icon: MessageSquare, label: t('guide.tabChat') },
-    { id: 'analyzer', icon: BarChart2, label: t('guide.tabAnalyzer') },
-  ];
+  const tabs: { id: TabType; icon: React.ElementType; label: string }[] = isLecturer
+    ? [
+        { id: 'dashboard', icon: LayoutDashboard, label: t('guideLect.tabDashboard') },
+        { id: 'library', icon: BookOpen, label: t('guideLect.tabLibrary') },
+        { id: 'students', icon: Users, label: t('guideLect.tabStudents') },
+      ]
+    : [
+        { id: 'library', icon: BookOpen, label: t('guide.tabLibrary') },
+        { id: 'chat', icon: MessageSquare, label: t('guide.tabChat') },
+        { id: 'analyzer', icon: BarChart2, label: t('guide.tabAnalyzer') },
+      ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div 
+      <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      
+
       <div className="relative w-full max-w-4xl bg-background border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card shrink-0">
           <div className="flex items-center gap-3">
@@ -39,11 +48,11 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">{t('guide.welcomeTitle')}</h2>
-              <p className="text-sm text-muted-foreground">{t('guide.subtitle')}</p>
+              <h2 className="text-xl font-bold text-foreground">{isLecturer ? t('guideLect.welcomeTitle') : t('guide.welcomeTitle')}</h2>
+              <p className="text-sm text-muted-foreground">{isLecturer ? t('guideLect.subtitle') : t('guide.subtitle')}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors"
           >
@@ -62,8 +71,8 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all font-medium text-sm ${
-                    isActive 
-                      ? 'bg-red-600 text-white shadow-md' 
+                    isActive
+                      ? 'bg-red-600 text-white shadow-md'
                       : 'text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -77,7 +86,9 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
 
           {/* Content Area */}
           <div className="flex-1 p-6 overflow-y-auto bg-background">
-            {activeTab === 'library' && (
+
+            {/* ───────── STUDENT CONTENT ───────── */}
+            {!isLecturer && activeTab === 'library' && (
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex items-center gap-4 border-b border-border pb-4">
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
@@ -88,34 +99,25 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <p className="text-muted-foreground">{t('guide.libraryDesc')}</p>
                   </div>
                 </div>
-
                 <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">1</div>
-                    <div>
-                      <h4 className="font-bold text-foreground">{t('guide.step1Title')}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step1Pre')}<strong>{t('guide.step1Bold')}</strong>{t('guide.step1Post')}</p>
+                  {[
+                    { n: '1', title: t('guide.step1Title'), body: <>{t('guide.step1Pre')}<strong>{t('guide.step1Bold')}</strong>{t('guide.step1Post')}</> },
+                    { n: '2', title: t('guide.step2Title'), body: t('guide.step2Desc') },
+                    { n: '3', title: t('guide.step3Title'), body: t('guide.step3Desc') },
+                  ].map((s) => (
+                    <div key={s.n} className="flex gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">{s.n}</div>
+                      <div>
+                        <h4 className="font-bold text-foreground">{s.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">{s.body}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">2</div>
-                    <div>
-                      <h4 className="font-bold text-foreground">{t('guide.step2Title')}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step2Desc')}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">3</div>
-                    <div>
-                      <h4 className="font-bold text-foreground">{t('guide.step3Title')}</h4>
-                      <p className="text-sm text-muted-foreground mt-1">{t('guide.step3Desc')}</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {activeTab === 'chat' && (
+            {!isLecturer && activeTab === 'chat' && (
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex items-center gap-4 border-b border-border pb-4">
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
@@ -126,36 +128,24 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <p className="text-muted-foreground">{t('guide.chatSectionDesc')}</p>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div className="bg-card border border-border p-4 rounded-xl flex gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
                     <p className="text-sm text-foreground"><strong>{t('guide.goalLabel')}</strong> {t('guide.goalText')}</p>
                   </div>
-
                   <ul className="space-y-3">
-                    <li className="flex gap-3 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>{t('guide.chatItem1')}</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>{t('guide.chatItem2')}</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>{t('guide.chatItem3')}</span>
-                    </li>
-                    <li className="flex gap-3 text-sm text-muted-foreground">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
-                      <span>{t('guide.chatItem4')}</span>
-                    </li>
+                    {['guide.chatItem1', 'guide.chatItem2', 'guide.chatItem3', 'guide.chatItem4'].map((k) => (
+                      <li key={k} className="flex gap-3 text-sm text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+                        <span>{t(k)}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
             )}
 
-            {activeTab === 'analyzer' && (
+            {!isLecturer && activeTab === 'analyzer' && (
               <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                 <div className="flex items-center gap-4 border-b border-border pb-4">
                   <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
@@ -166,7 +156,6 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                     <p className="text-muted-foreground">{t('guide.analyzerSectionDesc')}</p>
                   </div>
                 </div>
-
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-card border border-border p-4 rounded-xl">
@@ -180,7 +169,6 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                       <p className="text-xs text-muted-foreground mt-1">{t('guide.generateReportsDesc')}</p>
                     </div>
                   </div>
-
                   <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-border">
                     <h4 className="font-bold text-foreground text-sm mb-2">{t('guide.howToUse')}</h4>
                     <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
@@ -193,6 +181,90 @@ export default function GuideModal({ isOpen, onClose }: GuideModalProps) {
                 </div>
               </div>
             )}
+
+            {/* ───────── LECTURER CONTENT ───────── */}
+            {isLecturer && activeTab === 'dashboard' && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-4 border-b border-border pb-4">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                    <LayoutDashboard className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{t('guideLect.dashTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guideLect.dashDesc')}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {[
+                    { n: '1', body: t('guideLect.dashStep1') },
+                    { n: '2', body: t('guideLect.dashStep2') },
+                    { n: '3', body: <>{t('guideLect.dashStep3Pre')}<strong>{t('guideLect.dashStep3Bold')}</strong>{t('guideLect.dashStep3Post')}</> },
+                  ].map((s) => (
+                    <div key={s.n} className="flex gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600">{s.n}</div>
+                      <p className="text-sm text-muted-foreground mt-1">{s.body}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {isLecturer && activeTab === 'library' && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-4 border-b border-border pb-4">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                    <BookOpen className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{t('guideLect.libTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guideLect.libDesc')}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-card border border-border p-4 rounded-xl">
+                      <UploadCloud className="w-5 h-5 text-red-600 mb-2" />
+                      <p className="text-xs text-muted-foreground">{t('guideLect.libItem1')}</p>
+                    </div>
+                    <div className="bg-card border border-border p-4 rounded-xl">
+                      <Trash2 className="w-5 h-5 text-red-600 mb-2" />
+                      <p className="text-xs text-muted-foreground">{t('guideLect.libItem3')}</p>
+                    </div>
+                  </div>
+                  <ul className="space-y-3">
+                    {['guideLect.libItem2', 'guideLect.libItem4'].map((k) => (
+                      <li key={k} className="flex gap-3 text-sm text-muted-foreground">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+                        <span>{t(k)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {isLecturer && activeTab === 'students' && (
+              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-4 border-b border-border pb-4">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                    <Users className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground">{t('guideLect.studTitle')}</h3>
+                    <p className="text-muted-foreground">{t('guideLect.studDesc')}</p>
+                  </div>
+                </div>
+                <ul className="space-y-3">
+                  {['guideLect.studItem1', 'guideLect.studItem2', 'guideLect.studItem3'].map((k) => (
+                    <li key={k} className="flex gap-3 text-sm text-muted-foreground">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-2 shrink-0" />
+                      <span>{t(k)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
