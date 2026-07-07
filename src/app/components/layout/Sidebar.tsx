@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import {
   FileText, ChevronLeft, ChevronRight, X, GraduationCap
 } from 'lucide-react';
@@ -19,7 +19,7 @@ export default function Sidebar({ mobileSidebarOpen, onMobileSidebarClose }: Sid
   const { user, logout } = useAuth();
   const { t } = useLanguage();
 
-  const navItems = NAV_ITEMS;
+  const navItems = NAV_ITEMS.filter(item => !item.roles || item.roles.includes(user?.role || 'student'));
 
   const isActive = (path: string) => location.pathname === path;
 

@@ -12,6 +12,8 @@ import HistoryPage from './components/history/HistoryPage';
 import AnalyzedReports from './components/analysis/AnalyzedReports';
 import ChatAnalyzer from './components/analysis/ChatAnalyzer';
 import MainLayout from './components/layout/MainLayout';
+import RegisterCourses from './components/courses/RegisterCourses';
+import ManageCourses from './components/courses/ManageCourses';
 
 function Root() {
   return (
@@ -67,13 +69,15 @@ export const router = createBrowserRouter([
           { index: true,             Component: ChatInterface },
           { path: 'chat-analyzer',   Component: ChatAnalyzer },
           { path: 'library',         Component: Library },
-          { path: 'reports',   Component: AnalyzedReports },
-          { path: 'settings',  Component: SettingsPage },
-          { path: 'history',   Component: HistoryPage },
+          { path: 'reports',         Component: AnalyzedReports },
+          { path: 'settings',        Component: SettingsPage },
+          { path: 'history',         Component: HistoryPage },
+          { path: 'register-courses', Component: RegisterCourses },
         ],
       },
 
       /* Standalone pages — no sidebar */
+      { path: 'manage-courses',  Component: ManageCourses },
       { path: 'lecturer',        Component: LecturerRoute },
       { path: 'student/:id',     Component: StudentViewRoute },
     ],
