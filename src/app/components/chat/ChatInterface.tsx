@@ -5,14 +5,15 @@ import {
   Upload, FileText,
   ChevronLeft, ChevronRight,
   Check, Download, BookmarkPlus, ExternalLink,
-  AlignLeft
+  AlignLeft, HelpCircle, Sparkles, X, Languages
 } from 'lucide-react';
 // Import mock data and types for articles and chat messages
 import { mockChatHistory, ChatMessage, Article } from '../../data/mockData';
 import { getPapers, uploadPaper } from '../../services/paperService';
 // Import authentication context to check user role
 import { useAuth } from '../../context/AuthContext';
-import { getMyProgress, getStudentProgress, toScoreMap } from '../../services/progressService';
+import { getMyProgress, getStudentProgress, toScoreMap, toRationaleMap, translateRationale } from '../../services/progressService';
+import api from '../../services/api';
 import { saveReport } from '../../../utils/reportsStore';
 // Import routing hooks for navigation
 import { useNavigate, useParams } from 'react-router';
@@ -26,6 +27,8 @@ import StudentPerformancePanel from '../dashboard/StudentPerformancePanel';
 // Import toast notification library
 import { toast } from 'sonner';
 import { getShortSummary, extractTextFromPDF } from '../../../utils/textUtils';
+import { saveGuidingQuestions, SavedGuidingQuestion } from '../../../utils/guidingQuestionsStore';
+import UploaderBadge, { UploaderFilter, UploaderFilterControl, matchesUploaderFilter } from '../ui/UploaderBadge';
 import ArticleIcon from '../ui/ArticleIcon';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -55,7 +58,7 @@ export default function ChatInterface() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { id: studentId } = useParams();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   // Check if the current view is lecturer view
   const isLecturerView = user?.role === 'lecturer';
 
@@ -81,6 +84,7 @@ export default function ChatInterface() {
   // State for article library search and sort
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title'>('newest');
+  const [uploaderFilter, setUploaderFilter] = useState<UploaderFilter>('all');
 
   // State for analysis display
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
@@ -91,6 +95,10 @@ export default function ChatInterface() {
   // State for saving analysis with custom name
   const [showSaveName, setShowSaveName] = useState(false);
   const [saveName, setSaveName] = useState('');
+
+  // Snapshot of the guiding questions block, and the save-questions popup
+  const [guidingQuestions, setGuidingQuestions] = useState<SavedGuidingQuestion[]>([]);
+  const [showSaveQuestions, setShowSaveQuestions] = useState(false);
 
   // State for selected articles and analysis depth
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(
@@ -264,6 +272,7 @@ export default function ChatInterface() {
         a.authors.some(author => author.toLowerCase().includes(q))
       );
     }
+    result = result.filter((a) => matchesUploaderFilter(a, uploaderFilter));
     result.sort((a, b) => {
       if (sortBy === 'title') return a.title.localeCompare(b.title);
       const yearA = a.year || 0;
@@ -272,7 +281,7 @@ export default function ChatInterface() {
       return yearB - yearA;
     });
     return result;
-  }, [uploadedFiles, searchQuery, sortBy]);
+  }, [uploadedFiles, searchQuery, sortBy, uploaderFilter]);
 
   // Function to handle sending messages in the chat
   const handleSendMessage = (textOrEvent?: string | React.MouseEvent | React.KeyboardEvent) => {
@@ -366,12 +375,8 @@ export default function ChatInterface() {
 
   // Open the selected articles as a chat in the Chat Analyzer. Hands the
   // selection over via the resumed-session keys that ChatAnalyzer reads on mount.
-  const openInChatAnalyzer = () => {
+  const proceedToChatAnalyzer = () => {
     const ids = Array.from(selectedArticles);
-    if (ids.length === 0) {
-      toast.error(t('chat.toastSelectArticleFirst'));
-      return;
-    }
     try {
       localStorage.setItem('resumed_session_id', `rc-${Date.now()}`);
       localStorage.setItem('resumed_session_article_ids', JSON.stringify(ids));
@@ -380,14 +385,59 @@ export default function ChatInterface() {
     navigate('/chat-analyzer');
   };
 
+  const openInChatAnalyzer = () => {
+    if (selectedArticles.size === 0) {
+      toast.error(t('chat.toastSelectArticleFirst'));
+      return;
+    }
+    if (guidingQuestions.some((q) => q.text.trim().length > 0)) {
+      setShowSaveQuestions(true);
+      return;
+    }
+    proceedToChatAnalyzer();
+  };
+
   // Real per-paper comprehension, scored server-side by the LLM judge and stored
   // in Progress. For a lecturer viewing /student/:id we load that student; for a
   // student's own view we load their own progress.
+  // Resolved name of the student a lecturer is viewing (falls back to a label).
+  const [studentName, setStudentName] = useState<string>('');
+  useEffect(() => {
+    if (!studentId || !isLecturerView) return;
+    api.get('/users/students')
+      .then((res) => {
+        const match = (res.data || []).find((s: any) => s.id === studentId);
+        if (match?.name) setStudentName(match.name);
+      })
+      .catch((e) => console.error('Failed to load student name:', e));
+  }, [studentId, isLecturerView]);
+
   const [realProgress, setRealProgress] = useState<Record<string, number>>({});
+  // paperId -> AI rationale for the score (lecturer "Why this score?" popup).
+  const [progressRationale, setProgressRationale] = useState<Record<string, string>>({});
+  // Which article's score explanation is currently open (null = closed).
+  const [rationaleArticleId, setRationaleArticleId] = useState<string | null>(null);
+  // Cached Hebrew translations of the rationale (paperId -> Hebrew text).
+  const [rationaleHe, setRationaleHe] = useState<Record<string, string>>({});
+  const [rationaleTranslating, setRationaleTranslating] = useState(false);
+
+  // When the explanation opens in Hebrew, fetch its Hebrew translation (cached).
+  useEffect(() => {
+    if (!rationaleArticleId || language !== 'he' || !studentId) return;
+    if (rationaleHe[rationaleArticleId] !== undefined) return;
+    setRationaleTranslating(true);
+    translateRationale(studentId, rationaleArticleId)
+      .then((he) => setRationaleHe((prev) => ({ ...prev, [rationaleArticleId]: he })))
+      .catch((e) => console.error('Failed to translate rationale:', e))
+      .finally(() => setRationaleTranslating(false));
+  }, [rationaleArticleId, language, studentId]);
   useEffect(() => {
     const load = studentId ? getStudentProgress(studentId) : getMyProgress();
     load
-      .then((items) => setRealProgress(toScoreMap(items)))
+      .then((items) => {
+        setRealProgress(toScoreMap(items));
+        setProgressRationale(toRationaleMap(items));
+      })
       .catch((e) => console.error('Failed to load comprehension progress:', e));
   }, [studentId]);
 
@@ -557,6 +607,17 @@ export default function ChatInterface() {
           )}
 
           {isLecturerView && (
+            <button
+              onClick={() => setLanguage(language === 'he' ? 'en' : 'he')}
+              className="p-2 rounded-lg bg-muted border border-border hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold"
+              title={language === 'he' ? 'Switch to English' : 'החלף לעברית'}
+            >
+              <Languages className="w-4 h-4" />
+              <span>{language === 'he' ? 'EN' : 'עב'}</span>
+            </button>
+          )}
+
+          {isLecturerView && (
             <div className="relative ml-2">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -589,6 +650,90 @@ export default function ChatInterface() {
       <div className="flex-1 overflow-y-auto bg-muted">
         <div className="w-full max-w-7xl mx-auto p-4 md:p-6 space-y-6 pb-40">
 
+          {/* "Why this score?" — AI rationale for a student's comprehension score */}
+          {rationaleArticleId && (() => {
+            const article = uploadedFiles.find((a) => a.id === rationaleArticleId);
+            return (
+              <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setRationaleArticleId(null)}>
+                <div className="bg-card rounded-2xl shadow-xl w-full max-w-md p-6 border border-border" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground">{t('chat.whyThisScore')}</h3>
+                      {article && <p className="text-xs text-muted-foreground truncate">{article.title}</p>}
+                    </div>
+                    <button
+                      onClick={() => setRationaleArticleId(null)}
+                      className="p-1.5 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                      aria-label={t('chat.cancel')}
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{t('chat.studentComprehension')}</span>
+                    <span className="text-sm font-bold text-red-600 tabular-nums">{perArticleComprehension[rationaleArticleId] ?? 0}%</span>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/40 p-3.5">
+                    {language === 'he' && rationaleHe[rationaleArticleId] === undefined && rationaleTranslating ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="w-4 h-4 rounded-full border-2 border-red-500/30 border-t-red-600 animate-spin" />
+                        <span>{t('chat.translating')}</span>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {language === 'he'
+                          ? (rationaleHe[rationaleArticleId] || progressRationale[rationaleArticleId])
+                          : progressRationale[rationaleArticleId]}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-3 italic">{t('chat.scoreRationaleNote')}</p>
+                </div>
+              </div>
+            );
+          })()}
+
+          {showSaveQuestions && (
+            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 border border-border">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl flex items-center justify-center text-foreground">
+                    <BookmarkPlus className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground">{t('chat.saveQuestionsTitle')}</h3>
+                    <p className="text-xs text-muted-foreground">{t('chat.saveQuestionsSubtitle')}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      saveGuidingQuestions(guidingQuestions);
+                      setShowSaveQuestions(false);
+                      toast.success(t('chat.toastQuestionsSaved'));
+                      proceedToChatAnalyzer();
+                    }}
+                    className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 hover:border-red-800 hover:shadow-md hover:scale-105 transition-all"
+                  >
+                    {t('chat.saveQuestionsConfirm')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSaveQuestions(false);
+                      proceedToChatAnalyzer();
+                    }}
+                    className="px-4 py-2.5 bg-muted text-muted-foreground rounded-xl text-sm font-bold hover:bg-slate-200 hover:text-slate-700 hover:shadow-sm hover:scale-105 transition-all"
+                  >
+                    {t('chat.saveQuestionsSkip')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {showSaveName && (
             <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 border border-border">
@@ -620,7 +765,7 @@ export default function ChatInterface() {
 
           {isLecturerView && (
             <StudentPerformancePanel
-              studentName={studentId ? `${t('chat.studentLabel')} ${studentId}` : t('chat.studentLabel')}
+              studentName={studentName || t('chat.studentLabel')}
               articles={uploadedFiles}
               messages={messages}
               analyzedIds={analyzedArticles}
@@ -664,15 +809,7 @@ export default function ChatInterface() {
                   <option value="oldest">{t('chat.sortOldest')}</option>
                   <option value="title">{t('chat.sortTitle')}</option>
                 </select>
-                {/* arrows: moved next to selection box as requested */}
-                <div className="flex items-center gap-2">
-                  <button onClick={() => scrollRow('left')} className={arrowBtnClass} aria-label={t('chat.scrollLeft')}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => scrollRow('right')} className={arrowBtnClass} aria-label={t('chat.scrollRight')}>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+                <UploaderFilterControl value={uploaderFilter} onChange={setUploaderFilter} />
               </div>
             </div>
 
@@ -705,7 +842,17 @@ export default function ChatInterface() {
                     </div>
                   </div>
 
-                  <div id="articles-carousel" className="flex items-stretch overflow-x-auto gap-4 pb-2 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="flex items-center gap-2">
+                    {/* Paging arrows flank the carousel so browsing happens right next to the articles */}
+                    <button
+                      onClick={() => scrollRow('left')}
+                      className={`${arrowBtnClass} shrink-0 self-center`}
+                      aria-label={t('chat.scrollLeft')}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+
+                    <div id="articles-carousel" className="flex-1 flex items-stretch overflow-x-auto gap-4 pb-2 snap-x snap-mandatory scroll-smooth [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {analyzedColumnArticles.map((article) => {
                       const isSelected = selectedArticles.has(article.id);
                       const isExpanded = expandedSummaryId === article.id;
@@ -732,6 +879,9 @@ export default function ChatInterface() {
 
                             <div className="flex items-start gap-3 mb-3 pr-8 shrink-0 min-h-[3.5rem]">
                               <div className="flex-1 min-w-0">
+                                <div className="mb-1.5">
+                                  <UploaderBadge article={article} />
+                                </div>
                                 <h3 className="font-medium text-foreground/90 text-sm leading-snug line-clamp-2 min-h-[2.5rem]" title={article.title}>
                                   {article.title}
                                 </h3>
@@ -760,7 +910,9 @@ export default function ChatInterface() {
                             {isLecturerView && (
                               <div className="mb-3 shrink-0">
                                 <div className="flex items-center justify-between mb-1.5">
-                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{t('chat.studentComprehension')}</span>
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">
+                                    {t('chat.studentComprehension')}
+                                  </span>
                                   <span className="text-xs font-bold text-foreground tabular-nums">{perArticleComprehension[article.id] ?? 0}%</span>
                                 </div>
                                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden border border-border">
@@ -769,6 +921,15 @@ export default function ChatInterface() {
                                     style={{ width: `${perArticleComprehension[article.id] ?? 0}%` }}
                                   />
                                 </div>
+                                {progressRationale[article.id] && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setRationaleArticleId(article.id); }}
+                                    className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
+                                  >
+                                    <HelpCircle className="w-3.5 h-3.5" />
+                                    {t('chat.whyThisScore')}
+                                  </button>
+                                )}
                               </div>
                             )}
 
@@ -782,6 +943,15 @@ export default function ChatInterface() {
                         </div>
                       );
                     })}
+                    </div>
+
+                    <button
+                      onClick={() => scrollRow('right')}
+                      className={`${arrowBtnClass} shrink-0 self-center`}
+                      aria-label={t('chat.scrollRight')}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
               );
@@ -808,6 +978,7 @@ export default function ChatInterface() {
               selectedArticleIds={selectedArticles}
               disabled={!canChat}
               disabledReason={t('chat.guidedQuestionsDisabledReason')}
+              onQuestionsChange={setGuidingQuestions}
             />
           )}
 

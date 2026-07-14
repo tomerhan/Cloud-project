@@ -1,12 +1,13 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   X, GitCompare, Download, FileText, HelpCircle, Star,
-  ChevronDown, ChevronUp, Info, Award, BookOpen, TrendingUp
+  ChevronDown, ChevronUp, Info, BookOpen, TrendingUp, AlertCircle, Scale
 } from 'lucide-react';
 import { Article } from '../../data/mockData';
 import { toast } from 'sonner';
 import { useLanguage } from '../../context/LanguageContext';
 import ArticleIcon from '../ui/ArticleIcon';
+import { comparePapersByCriteria, PaperComparison } from '../../services/paperService';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
 
 /*
@@ -14,40 +15,19 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
  * -------------------------------------------------------------------------
  * The richer, modal version of the comparison view (opened from
  * AnalyzedReports). Adds visual scoring on top of the plain table:
- *   - a radar chart comparing papers across 4 dimensions
- *   - per-paper score cards (citations, impact, progress bars)
+ *   - a radar chart comparing papers across the comparison criteria
+ *   - per-paper score cards with AI explanations per criterion
  *   - a "Best" badge on the most-cited paper
  *   - a field-by-field table + collapsible AI insight cards
+ * Scores come from POST /papers/compare (Gemini): difficulty is always
+ * compared, plus the supervisor's criteria (or server defaults).
  * Can also spin off a chat via the 'create-chat-from-comparison' event.
- * NOTE: scores are mock/random (see generateScores) — not real metrics.
  */
 
 interface ComparisonModalProps {
   articles: Article[];   // papers to compare (up to ~4 look good)
   onClose: () => void;
 }
-
-/* ─── Paper quality scores (mock) ─── */
-interface PaperScores {
-  reliability: number;
-  readability: number;
-  methodology: number;
-  relevance: number;
-  citations: number;
-  impactFactor: number;
-}
-
-// Fabricate quality scores for a paper. Only `citations` is real; reliability
-// is loosely tied to citations, the rest are random within plausible ranges.
-// Used to fill the radar chart and the per-paper score cards.
-const generateScores = (article: Article): PaperScores => ({
-  reliability: Math.min(100, 65 + (article.citations / 100) * 35),
-  readability: Math.floor(70 + Math.random() * 25),
-  methodology: Math.floor(60 + Math.random() * 35),
-  relevance: Math.floor(75 + Math.random() * 20),
-  citations: article.citations,
-  impactFactor: parseFloat((2.5 + Math.random() * 5).toFixed(1)),
-});
 
 // Render one comparison-table cell, formatting by field type: keyFindings ->
 // bulleted list, topics -> coloured pills, other arrays -> CSV, abstract ->
@@ -85,7 +65,7 @@ function renderCell(article: Article, key: string) {
 }
 
 export default function ComparisonModal({ articles, onClose }: ComparisonModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const aiInsights = [
     {
       label: t('analysis.compareModal.insight.commonThemes.label'),
@@ -121,30 +101,41 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
     0
   );
 
-  /* ─── Generate scores for each article (parallel to `articles` by index) ─── */
-  const articleScores = articles.map((article) => generateScores(article));
+  /* ─── Real AI comparison (difficulty + supervisor/default criteria) ─── */
+  const [comparison, setComparison] = useState<PaperComparison | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(true);
+  const [comparisonError, setComparisonError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setComparisonLoading(true);
+    setComparisonError(false);
+    comparePapersByCriteria(articles.map((a) => a.id), language)
+      .then((result) => { if (!cancelled) setComparison(result); })
+      .catch((error) => {
+        console.error('AI comparison failed:', error);
+        if (!cancelled) setComparisonError(true);
+      })
+      .finally(() => { if (!cancelled) setComparisonLoading(false); });
+    return () => { cancelled = true; };
+  }, [articles, language]);
+
+  const scoresFor = (articleId: string) =>
+    comparison?.papers.find((p) => p.paperId === articleId)?.scores;
 
   /* ─── Radar chart data ───
-   * One row per metric; each row spreads in a `Paper N` key per article so
+   * One row per criterion; each row spreads in a `Paper N` key per article so
    * recharts can draw one Radar series per paper over the shared axes. */
-  const radarData = [
-    {
-      metric: t('analysis.compareModal.reliability'),
-      ...articles.reduce((acc, article, idx) => ({ ...acc, [`Paper ${idx + 1}`]: articleScores[idx].reliability }), {}),
-    },
-    {
-      metric: t('analysis.compareModal.readability'),
-      ...articles.reduce((acc, article, idx) => ({ ...acc, [`Paper ${idx + 1}`]: articleScores[idx].readability }), {}),
-    },
-    {
-      metric: t('analysis.compareModal.methodology'),
-      ...articles.reduce((acc, article, idx) => ({ ...acc, [`Paper ${idx + 1}`]: articleScores[idx].methodology }), {}),
-    },
-    {
-      metric: t('analysis.compareModal.relevance'),
-      ...articles.reduce((acc, article, idx) => ({ ...acc, [`Paper ${idx + 1}`]: articleScores[idx].relevance }), {}),
-    },
-  ];
+  const radarData = (comparison?.criteria || []).map((criterion) => ({
+    metric: criterion,
+    ...articles.reduce(
+      (acc, article, idx) => ({
+        ...acc,
+        [`Paper ${idx + 1}`]: scoresFor(article.id)?.[criterion]?.score ?? 0,
+      }),
+      {}
+    ),
+  }));
 
   const chartColors = ['#dc2626', '#2563eb', '#16a34a', '#f59e0b'];
 
@@ -242,114 +233,142 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
         {/* Content */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden">
 
-          {/* ═══ Visual Comparison Metrics ═══ */}
+          {/* ═══ Visual Comparison Metrics (real AI scores) ═══ */}
           <div className="px-6 pt-5 pb-4 space-y-5">
 
-            {/* Radar Chart */}
-            <div className="bg-white border border-slate-200 rounded-xl p-5">
-              <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-red-600" />
-                {t('analysis.compareModal.multiDimensional')}
-              </h3>
-              <ResponsiveContainer width="100%" height={320}>
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="metric" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                  {articles.map((_, idx) => (
-                    <Radar
-                      key={idx}
-                      name={t('analysis.compareModal.paperLabel').replace('{n}', String(idx + 1))}
-                      dataKey={`Paper ${idx + 1}`}
-                      stroke={chartColors[idx]}
-                      fill={chartColors[idx]}
-                      fillOpacity={0.2}
-                      strokeWidth={2}
-                    />
-                  ))}
-                  <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+            {comparisonLoading && (
+              <div className="bg-white border border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full border-4 border-red-500/30 border-t-red-600 animate-spin"></div>
+                <p className="text-sm text-slate-500 font-medium">{t('analysis.compareModal.aiComparing')}</p>
+              </div>
+            )}
 
-            {/* Score Bars + Badges Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {articles.map((article, idx) => {
-                const scores = articleScores[idx];
-                const isBest = idx === bestMatchIdx;
-                return (
-                  <div
-                    key={article.id}
-                    className={`p-4 rounded-xl border-2 ${
-                      isBest ? 'border-amber-400 bg-amber-50/30' : 'border-slate-200 bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 pr-2">
-                        <h4 className="font-bold text-slate-900 text-sm leading-tight line-clamp-2 mb-1">
-                          {t('analysis.compareModal.paperLabel').replace('{n}', String(idx + 1))}
-                        </h4>
-                        <p className="text-[11px] text-slate-500">
-                          {article.authors[0]} {t('analysis.reports.etAl')} · {article.year}
-                        </p>
-                      </div>
-                      {isBest && (
-                        <div className="flex items-center gap-1 bg-amber-400 px-2 py-0.5 rounded-full">
-                          <Star className="w-2.5 h-2.5 text-red-600 fill-amber-900" />
-                          <span className="text-[10px] font-bold text-amber-900 uppercase">{t('analysis.compareModal.best')}</span>
-                        </div>
-                      )}
-                    </div>
+            {comparisonError && !comparisonLoading && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 flex items-center gap-3 text-red-700 dark:text-red-400">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p className="text-sm">{t('analysis.compareModal.aiComparisonFailed')}</p>
+              </div>
+            )}
 
-                    {/* Numerical Badges */}
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg">
-                        <BookOpen className="w-3.5 h-3.5 text-red-600" />
-                        <div>
-                          <div className="text-[10px] font-bold text-slate-500 uppercase">{t('analysis.compareModal.citations')}</div>
-                          <div className="text-base font-bold text-slate-900">{scores.citations}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg">
-                        <Award className="w-3.5 h-3.5 text-red-600" />
-                        <div>
-                          <div className="text-[10px] font-bold text-slate-500 uppercase">{t('analysis.compareModal.impact')}</div>
-                          <div className="text-base font-bold text-slate-900">{scores.impactFactor}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Score Progress Bars */}
-                    <div className="space-y-2.5">
-                      {[
-                        { label: t('analysis.compareModal.reliability'), value: scores.reliability },
-                        { label: t('analysis.compareModal.readability'), value: scores.readability },
-                        { label: t('analysis.compareModal.methodology'), value: scores.methodology },
-                        { label: t('analysis.compareModal.relevance'), value: scores.relevance },
-                      ].map((item) => (
-                        <div key={item.label}>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
-                              {item.label}
-                            </span>
-                            <span className="text-xs font-bold text-slate-700">{item.value}%</span>
-                          </div>
-                          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{
-                                width: `${item.value}%`,
-                                backgroundColor: chartColors[idx],
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+            {comparison && !comparisonLoading && (
+              <>
+                {/* Radar Chart over the real criteria */}
+                <div className="bg-white border border-slate-200 rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-red-600" />
+                      {t('analysis.compareModal.multiDimensional')}
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                      {comparison.criteriaSource === 'supervisor'
+                        ? t('analysis.compareModal.criteriaBySupervisor')
+                        : t('analysis.compareModal.criteriaDefault')}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  <ResponsiveContainer width="100%" height={320}>
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="#e2e8f0" />
+                      <PolarAngleAxis dataKey="metric" tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                      {articles.map((_, idx) => (
+                        <Radar
+                          key={idx}
+                          name={t('analysis.compareModal.paperLabel').replace('{n}', String(idx + 1))}
+                          dataKey={`Paper ${idx + 1}`}
+                          stroke={chartColors[idx]}
+                          fill={chartColors[idx]}
+                          fillOpacity={0.2}
+                          strokeWidth={2}
+                        />
+                      ))}
+                      <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Difficulty summary */}
+                {comparison.difficultySummary && (
+                  <div className="bg-white border border-slate-200 rounded-xl p-5">
+                    <h3 className="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-red-600" />
+                      {t('analysis.compareModal.difficultySummary')}
+                    </h3>
+                    <p className="text-sm text-slate-600 leading-relaxed">{comparison.difficultySummary}</p>
+                  </div>
+                )}
+
+                {/* Per-paper criterion scores + AI explanations */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {articles.map((article, idx) => {
+                    const scores = scoresFor(article.id);
+                    const isBest = idx === bestMatchIdx;
+                    return (
+                      <div
+                        key={article.id}
+                        className={`p-4 rounded-xl border-2 ${
+                          isBest ? 'border-amber-400 bg-amber-50/30' : 'border-slate-200 bg-slate-50/50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 pr-2">
+                            <h4 className="font-bold text-slate-900 text-sm leading-tight line-clamp-2 mb-1">
+                              {t('analysis.compareModal.paperLabel').replace('{n}', String(idx + 1))}
+                            </h4>
+                            <p className="text-[11px] text-slate-500">
+                              {article.authors[0]} {t('analysis.reports.etAl')} · {article.year}
+                            </p>
+                          </div>
+                          {isBest && (
+                            <div className="flex items-center gap-1 bg-amber-400 px-2 py-0.5 rounded-full">
+                              <Star className="w-2.5 h-2.5 text-red-600 fill-amber-900" />
+                              <span className="text-[10px] font-bold text-amber-900 uppercase">{t('analysis.compareModal.best')}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg mb-4 w-fit">
+                          <BookOpen className="w-3.5 h-3.5 text-red-600" />
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-500 uppercase">{t('analysis.compareModal.citations')}</div>
+                            <div className="text-base font-bold text-slate-900">{article.citations}</div>
+                          </div>
+                        </div>
+
+                        {/* Criterion score bars with AI explanations */}
+                        <div className="space-y-3">
+                          {comparison.criteria.map((criterion) => {
+                            const entry = scores?.[criterion];
+                            if (!entry) return null;
+                            return (
+                              <div key={criterion}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
+                                    {criterion}
+                                  </span>
+                                  <span className="text-xs font-bold text-slate-700">{entry.score}/10</span>
+                                </div>
+                                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all duration-500"
+                                    style={{
+                                      width: `${entry.score * 10}%`,
+                                      backgroundColor: chartColors[idx],
+                                    }}
+                                  />
+                                </div>
+                                {entry.explanation && (
+                                  <p className="text-[11px] text-slate-500 leading-snug mt-1">{entry.explanation}</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Article header cards (responsive flex row for screen) */}

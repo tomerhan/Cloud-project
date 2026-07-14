@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Search, UserPlus, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Search, UserPlus, CheckCircle2, Clock, AlertCircle, X } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
+
+interface SupervisorEntry {
+  _id: string;
+  lecturer: {
+    _id: string;
+    name: string;
+    email: string;
+    institution?: string;
+  };
+  status: 'pending' | 'approved';
+}
 
 export default function RegisterCourses() {
   const { t } = useLanguage();
@@ -9,34 +20,32 @@ export default function RegisterCourses() {
   const [searchResult, setSearchResult] = useState<any>(null);
   const [searchError, setSearchError] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  
-  const [supervisorStatus, setSupervisorStatus] = useState<string>('none');
-  const [supervisorName, setSupervisorName] = useState<string>('');
-  const [supervisorEmail, setSupervisorEmail] = useState<string>('');
+
+  const [supervisors, setSupervisors] = useState<SupervisorEntry[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
+  const fetchProfile = async () => {
+    try {
+      const response = await api.get('/users/profile');
+      const entries: SupervisorEntry[] = (response.data.supervisors || []).filter(
+        (s: SupervisorEntry) => s.lecturer
+      );
+      setSupervisors(entries);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await api.get('/users/profile');
-        setSupervisorStatus(response.data.supervisorStatus || 'none');
-        if (response.data.supervisor) {
-          if (response.data.supervisor.name) setSupervisorName(response.data.supervisor.name);
-          if (response.data.supervisor.email) setSupervisorEmail(response.data.supervisor.email);
-        }
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-      } finally {
-        setIsLoadingProfile(false);
-      }
-    };
     fetchProfile();
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    
+
     setIsSearching(true);
     setSearchError('');
     setSearchResult(null);
@@ -45,7 +54,7 @@ export default function RegisterCourses() {
       const response = await api.get(`/users/search-lecturer?email=${encodeURIComponent(email)}`);
       setSearchResult(response.data);
     } catch (error: any) {
-      setSearchError(error.response?.data?.message || 'Lecturer not found');
+      setSearchError(error.response?.data?.message || t('supervisors.notFound'));
     } finally {
       setIsSearching(false);
     }
@@ -55,10 +64,20 @@ export default function RegisterCourses() {
     if (!searchResult) return;
     try {
       await api.post('/users/request-supervisor', { lecturerId: searchResult._id });
-      setSupervisorStatus('pending');
       setSearchResult(null);
+      setEmail('');
+      await fetchProfile();
     } catch (error: any) {
-      setSearchError(error.response?.data?.message || 'Failed to send request');
+      setSearchError(error.response?.data?.message || t('supervisors.requestFailed'));
+    }
+  };
+
+  const handleCancel = async (lecturerId: string) => {
+    try {
+      await api.delete(`/users/cancel-supervisor-request/${lecturerId}`);
+      await fetchProfile();
+    } catch (error: any) {
+      setSearchError(error.response?.data?.message || t('supervisors.cancelFailed'));
     }
   };
 
@@ -77,95 +96,109 @@ export default function RegisterCourses() {
       <div className="max-w-4xl mx-auto w-full space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-2">
-            {t('nav.registerCourses') || 'Supervisor Registration'}
+            {t('supervisors.title')}
           </h1>
           <p className="text-muted-foreground">
-            Search for a lecturer by their email address to send a supervision request.
+            {t('supervisors.subtitle')}
           </p>
         </div>
 
-        {supervisorStatus === 'approved' && (
-          <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-6 rounded-xl flex items-center gap-4 text-emerald-700 dark:text-emerald-400">
-            <CheckCircle2 className="w-8 h-8 shrink-0" />
-            <div>
-              <h3 className="font-bold">You have an approved supervisor</h3>
-              <p className="text-sm mt-1">
-                You are currently supervised by {supervisorName ? <span className="font-bold">{supervisorName}</span> : 'a lecturer'}.
-              </p>
-              {supervisorEmail && (
-                <p className="text-xs mt-1 opacity-80">{supervisorEmail}</p>
-              )}
-            </div>
+        {supervisors.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-lg font-bold text-foreground">{t('supervisors.mySupervisors')}</h2>
+            {supervisors.map((entry) => (
+              <div
+                key={entry._id}
+                className={
+                  entry.status === 'approved'
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl flex items-center gap-4 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-xl flex items-center gap-4 text-amber-700 dark:text-amber-400'
+                }
+              >
+                {entry.status === 'approved' ? (
+                  <CheckCircle2 className="w-6 h-6 shrink-0" />
+                ) : (
+                  <Clock className="w-6 h-6 shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold truncate">{entry.lecturer.name}</h3>
+                  <p className="text-xs opacity-80 truncate">{entry.lecturer.email}</p>
+                  <p className="text-xs mt-0.5">
+                    {entry.status === 'approved'
+                      ? t('supervisors.statusApproved')
+                      : t('supervisors.statusPending')}
+                  </p>
+                </div>
+                {entry.status === 'pending' && (
+                  <button
+                    onClick={() => handleCancel(entry.lecturer._id)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    title={t('supervisors.cancelRequest')}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    {t('supervisors.cancelRequest')}
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
-        {supervisorStatus === 'pending' && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-6 rounded-xl flex items-center gap-4 text-amber-700 dark:text-amber-400">
-            <Clock className="w-8 h-8 shrink-0" />
-            <div>
-              <h3 className="font-bold">Request Pending</h3>
-              <p className="text-sm mt-1">You have a pending request waiting for a lecturer's approval.</p>
-            </div>
-          </div>
-        )}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-foreground mb-4">{t('supervisors.findLecturer')}</h2>
 
-        {(supervisorStatus === 'none' || supervisorStatus === 'rejected') && (
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <h2 className="text-lg font-bold text-foreground mb-4">Find Lecturer</h2>
-            
-            <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="email"
-                  placeholder="Enter lecturer's email..."
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
-                  required
-                />
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <input
+                type="email"
+                placeholder={t('supervisors.emailPlaceholder')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-background border border-border rounded-xl focus:ring-2 focus:ring-red-500 outline-none transition-all"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSearching}
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-all shadow-md disabled:opacity-50"
+            >
+              {isSearching ? t('supervisors.searching') : t('supervisors.search')}
+            </button>
+          </form>
+
+          {searchError && (
+            <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl mb-4">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <p className="text-sm">{searchError}</p>
+            </div>
+          )}
+
+          {searchResult && (
+            <div className="border border-border rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/50">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600 text-lg border border-border">
+                  {searchResult.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground text-lg">{searchResult.name}</h3>
+                  <p className="text-sm text-muted-foreground">{searchResult.email}</p>
+                  {searchResult.institution && (
+                    <p className="text-xs text-muted-foreground mt-1">{searchResult.institution}</p>
+                  )}
+                </div>
               </div>
               <button
-                type="submit"
-                disabled={isSearching}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-all shadow-md disabled:opacity-50"
+                onClick={handleRequest}
+                className="flex items-center gap-2 px-6 py-3 bg-foreground text-background hover:bg-muted-foreground font-medium rounded-xl transition-all shadow-sm w-full sm:w-auto justify-center"
               >
-                {isSearching ? 'Searching...' : 'Search'}
+                <UserPlus className="w-5 h-5" />
+                {t('supervisors.sendRequest')}
               </button>
-            </form>
-
-            {searchError && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 dark:bg-red-900/20 p-4 rounded-xl mb-4">
-                <AlertCircle className="w-5 h-5 shrink-0" />
-                <p className="text-sm">{searchError}</p>
-              </div>
-            )}
-
-            {searchResult && (
-              <div className="border border-border rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/50">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-bold text-red-600 text-lg border border-border">
-                    {searchResult.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground text-lg">{searchResult.name}</h3>
-                    <p className="text-sm text-muted-foreground">{searchResult.email}</p>
-                    {searchResult.institution && (
-                      <p className="text-xs text-muted-foreground mt-1">{searchResult.institution}</p>
-                    )}
-                  </div>
-                </div>
-                <button
-                  onClick={handleRequest}
-                  className="flex items-center gap-2 px-6 py-3 bg-foreground text-background hover:bg-muted-foreground font-medium rounded-xl transition-all shadow-sm w-full sm:w-auto justify-center"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  Add
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>

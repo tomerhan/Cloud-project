@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Lightbulb, Plus, Trash2, FileText, BookOpen, Sparkles } from 'lucide-react';
 import { Article } from '../../data/mockData';
 import { toast } from 'sonner';
 import { queryPaper } from '../../services/paperService';
 import { useLanguage } from '../../context/LanguageContext';
+import { loadGuidingQuestions, SavedGuidingQuestion } from '../../../utils/guidingQuestionsStore';
 
 interface QuestionEntry {
   id: string;
@@ -19,6 +20,7 @@ interface Props {
   selectedArticleIds?: Set<string>;
   disabled?: boolean;
   disabledReason?: string;
+  onQuestionsChange?: (questions: SavedGuidingQuestion[]) => void;
 }
 
 function detectArticles(text: string, articles: Article[]): Article[] {
@@ -32,11 +34,24 @@ function detectArticles(text: string, articles: Article[]): Article[] {
   });
 }
 
-export default function GuidingQuestionsBlock({ articles, selectedArticleIds, disabled, disabledReason }: Props) {
+export default function GuidingQuestionsBlock({ articles, selectedArticleIds, disabled, disabledReason, onQuestionsChange }: Props) {
   const { t, language } = useLanguage();
-  const [questions, setQuestions] = useState<QuestionEntry[]>([]);
+  const [questions, setQuestions] = useState<QuestionEntry[]>(() =>
+    loadGuidingQuestions().map((q) => ({
+      id: q.id,
+      text: q.text,
+      guide: q.guide,
+      mentioned: [],
+      answer: q.answer,
+      loading: false,
+    }))
+  );
   const articleLibrary = useMemo(() => articles, [articles]);
   const hasAtLeastOne = questions.some((q) => q.text.trim().length > 0);
+
+  useEffect(() => {
+    onQuestionsChange?.(questions.map(({ id, text, guide, answer }) => ({ id, text, guide, answer })));
+  }, [questions, onQuestionsChange]);
 
   const addQuestion = () => {
     if (disabled) return;

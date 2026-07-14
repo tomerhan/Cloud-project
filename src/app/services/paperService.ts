@@ -16,6 +16,9 @@ export async function getPapers(): Promise<Article[]> {
     keyFindings: paper.keyFindings || [],
     citations: paper.citations || 0,
     year: paper.year || new Date().getFullYear(),
+    uploaderRole: paper.uploaderRole || 'student',
+    uploaderName: paper.uploaderName || '',
+    isMine: !!paper.isMine,
   }));
 }
 
@@ -91,6 +94,28 @@ export async function updatePaper(id: string, data: { topics?: string[]; title?:
 export async function queryPaper(id: string, question: string, guide?: string, language?: string): Promise<string> {
   const response = await api.post(`/papers/${id}/query`, { question, guide, language });
   return response.data.answer;
+}
+
+// AI comparison of papers by criteria. Difficulty is always included; the
+// supervisor's criteria are used when defined, otherwise server defaults.
+export interface CriterionScore {
+  score: number; // 1-10
+  explanation: string;
+}
+
+export interface PaperComparison {
+  criteria: string[];
+  criteriaSource: 'supervisor' | 'default';
+  papers: Array<{
+    paperId: string;
+    scores: Record<string, CriterionScore>;
+  }>;
+  difficultySummary: string;
+}
+
+export async function comparePapersByCriteria(paperIds: string[], language?: string): Promise<PaperComparison> {
+  const response = await api.post('/papers/compare', { paperIds, language });
+  return response.data;
 }
 
 // A popular related paper suggested by the backend, ranked by real-world

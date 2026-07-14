@@ -8,6 +8,7 @@ import { Article } from '../../data/mockData';
 import { getPapers, uploadPaper, deletePaper, getSuggestions, PaperSuggestion, getPaperTranslation, PaperTranslation } from '../../services/paperService';
 import { toast } from 'sonner';
 import ArticleIcon from '../ui/ArticleIcon';
+import UploaderBadge, { UploaderFilter, UploaderFilterControl, matchesUploaderFilter } from '../ui/UploaderBadge';
 import { useLanguage } from '../../context/LanguageContext';
 
 type ViewMode = 'grid' | 'list';
@@ -27,6 +28,7 @@ export default function Library() {
   const [translatingId, setTranslatingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('all');
+  const [uploaderFilter, setUploaderFilter] = useState<UploaderFilter>('all');
   const [articles, setArticles] = useState<Article[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -148,7 +150,7 @@ export default function Library() {
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       article.authors.some((a) => a.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesTopic = selectedTopic === 'all' || article.topics.includes(selectedTopic);
-    return matchesSearch && matchesTopic;
+    return matchesSearch && matchesTopic && matchesUploaderFilter(article, uploaderFilter);
   });
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -330,6 +332,7 @@ export default function Library() {
                 ))}
               </select>
             </div>
+            <UploaderFilterControl value={uploaderFilter} onChange={setUploaderFilter} />
           </div>
         </div>
       </div>
@@ -366,15 +369,18 @@ export default function Library() {
                     }`}
                 >
                   <div className="p-5">
-                    {/* Badge */}
-                    {isBest && (
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <Star className="w-3.5 h-3.5 text-red-600 fill-amber-500" />
-                        <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
-                          {t('library.mostCited')}
-                        </span>
-                      </div>
-                    )}
+                    {/* Badges */}
+                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                      {isBest && (
+                        <div className="flex items-center gap-1.5">
+                          <Star className="w-3.5 h-3.5 text-red-600 fill-amber-500" />
+                          <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+                            {t('library.mostCited')}
+                          </span>
+                        </div>
+                      )}
+                      <UploaderBadge article={article} />
+                    </div>
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-foreground leading-tight mb-1 line-clamp-2">
@@ -512,6 +518,7 @@ export default function Library() {
                           <span className="text-[10px] font-bold text-amber-600">{t('library.top')}</span>
                         </span>
                       )}
+                      <UploaderBadge article={article} />
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                       <span>{article.authors[0]} {t('chat.etAl')}</span>

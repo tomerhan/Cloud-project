@@ -11,6 +11,11 @@ export interface Article {
   keyFindings: string[];
   citations: number;
   year: number;
+  // Who uploaded the paper — distinguishes lecturer course material from
+  // student uploads (set by GET /papers).
+  uploaderRole?: 'student' | 'lecturer';
+  uploaderName?: string;
+  isMine?: boolean;
 }
 
 export interface ChatMessage {
