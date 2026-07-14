@@ -36,16 +36,19 @@ function detectArticles(text: string, articles: Article[]): Article[] {
 
 export default function GuidingQuestionsBlock({ articles, selectedArticleIds, disabled, disabledReason, onQuestionsChange }: Props) {
   const { t, language } = useLanguage();
-  const [questions, setQuestions] = useState<QuestionEntry[]>(() =>
-    loadGuidingQuestions().map((q) => ({
-      id: q.id,
-      text: q.text,
-      guide: q.guide,
-      mentioned: [],
-      answer: q.answer,
-      loading: false,
-    }))
-  );
+  // Start empty and OFFER the saved questions via a banner, rather than
+  // silently pre-filling them (student chooses to load or start fresh).
+  const [questions, setQuestions] = useState<QuestionEntry[]>([]);
+  const [saved] = useState(() => loadGuidingQuestions());
+  const [showRestore, setShowRestore] = useState(saved.length > 0);
+
+  const restoreSaved = () => {
+    setQuestions(saved.map((q) => ({
+      id: q.id, text: q.text, guide: q.guide, mentioned: [], answer: q.answer, loading: false,
+    })));
+    setShowRestore(false);
+  };
+
   const articleLibrary = useMemo(() => articles, [articles]);
   const hasAtLeastOne = questions.some((q) => q.text.trim().length > 0);
 
@@ -122,8 +125,33 @@ export default function GuidingQuestionsBlock({ articles, selectedArticleIds, di
         </div>
       </div>
 
+      {showRestore && (
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50/60 dark:bg-red-950/30 p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-1">
+            <Sparkles className="w-4 h-4 text-red-600 shrink-0" />
+            <p className="text-sm text-foreground font-medium">
+              {t('chat.restoreBannerText').replace('{n}', String(saved.length))}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={restoreSaved}
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors"
+            >
+              {t('chat.restoreLoad')}
+            </button>
+            <button
+              onClick={() => setShowRestore(false)}
+              className="px-3.5 py-1.5 bg-muted text-muted-foreground hover:text-foreground rounded-lg text-xs font-bold border border-border transition-colors"
+            >
+              {t('chat.restoreFresh')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
-        {questions.length === 0 && (
+        {questions.length === 0 && !showRestore && (
           <div className="rounded-xl border-2 border-dashed border-border p-6 text-center bg-muted/40">
             <p className="text-sm text-muted-foreground">{t('chat.noQuestionsYet')}</p>
           </div>

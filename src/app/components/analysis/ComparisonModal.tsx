@@ -381,10 +381,10 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
                     {articles.map((article, idx) => (
                       <div
                         key={article.id}
-                        className={`bg-card rounded-2xl shadow-sm p-5 ${
+                        className={`rounded-2xl shadow-sm p-5 ${
                           idx === bestMatchIdx
                             ? 'border-amber-400 border-2 bg-amber-50'
-                            : 'border border-border'
+                            : 'border border-slate-200 bg-white'
                         } w-72 flex-shrink-0`}
                       >
                         {idx === bestMatchIdx && (
