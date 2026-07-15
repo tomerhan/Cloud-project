@@ -201,7 +201,7 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredChats.length > 0 ? (
+            {searchQuery && filteredChats.length > 0 ? (
               <div className="space-y-3">
                 {filteredChats.map((msg, idx) => {
                   const article = allArticles.find(a => a.id === msg.articleId);

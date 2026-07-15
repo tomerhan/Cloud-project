@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router';
 import { mockArticles, Article } from '../../data/mockData';
 import { CHAT_LABEL } from '../../config/nav';
 import { loadUploadedArticles } from '../../../utils/articleStore';
-import { loadReports, deleteReport, AnalysisReport } from '../../../utils/reportsStore';
+import { loadReports, deleteReport, AnalysisReport, saveReport } from '../../../utils/reportsStore';
 import { getPapers } from '../../services/paperService';
 import { toast } from 'sonner';
 import { useLanguage } from '../../context/LanguageContext';
@@ -37,6 +37,7 @@ export default function AnalyzedReports() {
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [compareArticles, setCompareArticles] = useState<Article[]>([]);
   const [singlePDFView, setSinglePDFView] = useState<Article | null>(null);
+  const [activeReport, setActiveReport] = useState<AnalysisReport | null>(null);
   
   // Reports persisted from Research Chat analyses (localStorage). Reload on focus
   // so a report created in another tab/route shows up here.
@@ -192,7 +193,16 @@ export default function AnalyzedReports() {
                         <p className="text-xs text-muted-foreground mt-1">{report.articleIds.length} {t('analysis.reports.articlesCountSuffix')} · {report.analysisDate}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setCompareArticles(getArticlesForReport(report.articleIds)); setShowCompareModal(true); }} className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-bold">{t('analysis.reports.openComparison')}</button>
+                        <button
+                          onClick={() => {
+                            setActiveReport(report);
+                            setCompareArticles(getArticlesForReport(report.articleIds));
+                            setShowCompareModal(true);
+                          }}
+                          className="px-3 py-1 rounded-lg bg-red-50 text-red-700 text-xs font-bold"
+                        >
+                          {t('analysis.reports.openComparison')}
+                        </button>
                       </div>
                     </div>
                     <div className="mt-3 space-y-2">
@@ -233,7 +243,19 @@ export default function AnalyzedReports() {
       {showCompareModal && (
         <ComparisonModal
           articles={compareArticles}
-          onClose={() => setShowCompareModal(false)}
+          cachedComparison={activeReport?.comparison}
+          onComparisonLoaded={(comp) => {
+            if (activeReport && !activeReport.comparison) {
+              const updatedReport = { ...activeReport, comparison: comp };
+              saveReport(updatedReport);
+              setActiveReport(updatedReport);
+              setReports((prev) => prev.map((r) => (r.id === activeReport.id ? updatedReport : r)));
+            }
+          }}
+          onClose={() => {
+            setShowCompareModal(false);
+            setActiveReport(null);
+          }}
         />
       )}
     </div>

@@ -4,5 +4,3 @@ dist/
 
 # local env files (keep out of git)
 .env
-.env.local
-.env.*.local

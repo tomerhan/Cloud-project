@@ -14,7 +14,7 @@ import { getPapers, uploadPaper } from '../../services/paperService';
 import { useAuth } from '../../context/AuthContext';
 import { getMyProgress, getStudentProgress, toScoreMap, toRationaleMap, translateRationale } from '../../services/progressService';
 import api from '../../services/api';
-import { saveReport } from '../../../utils/reportsStore';
+import { saveReport, loadReports } from '../../../utils/reportsStore';
 // Import routing hooks for navigation
 import { useNavigate, useParams } from 'react-router';
 // Import component components for displaying PDFs and analysis
@@ -107,6 +107,7 @@ export default function ChatInterface() {
   const [analysisDepth, setAnalysisDepth] = useState<1 | 2 | 3>(2);
   // Difficulty for the "Create Chat" box (own slider, separate from Analyze depth).
   const [chatDepth, setChatDepth] = useState<1 | 2 | 3>(2);
+  const [lastReportId, setLastReportId] = useState<string | null>(null);
 
   // State for article groups (organization feature)
   const [articleGroups, setArticleGroups] = useState<ArticleGroup[]>([]);
@@ -1068,14 +1069,16 @@ export default function ChatInterface() {
                 .filter(Boolean) as string[];
               if (ids.length > 0) {
                 const now = new Date().toISOString();
+                const reportId = `r-${Date.now()}`;
                 saveReport({
-                  id: `r-${Date.now()}`,
+                  id: reportId,
                   name: titles.length === 1 ? titles[0] : `${titles[0] ?? 'Analysis'} +${ids.length - 1} more`,
                   articleIds: ids,
                   createdAt: now,
                   analysisDate: now,
                   depth: 'Regular',
                 });
+                setLastReportId(reportId);
               }
             } catch { /* ignore */ }
             // Demo flag — forces Research Chat bar to 100% so the celebration effect is visible
@@ -1091,7 +1094,22 @@ export default function ChatInterface() {
       {showComparisonModal && (
         <ComparisonModal
           articles={uploadedFiles.filter((a) => selectedArticles.has(a.id))}
-          onClose={() => setShowComparisonModal(false)}
+          onComparisonLoaded={(comp) => {
+            if (lastReportId) {
+              const reports = loadReports();
+              const r = reports.find((x) => x.id === lastReportId);
+              if (r && !r.comparison) {
+                r.comparison = comp;
+                try {
+                  localStorage.setItem('analyzed_reports_v1', JSON.stringify(reports));
+                } catch {}
+              }
+            }
+          }}
+          onClose={() => {
+            setShowComparisonModal(false);
+            setLastReportId(null);
+          }}
         />
       )}
 

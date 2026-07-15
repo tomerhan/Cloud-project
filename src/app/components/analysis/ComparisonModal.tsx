@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   X, GitCompare, Download, FileText, HelpCircle, Star,
   ChevronDown, ChevronUp, Info, BookOpen, TrendingUp, AlertCircle, Scale
@@ -27,6 +27,8 @@ import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 interface ComparisonModalProps {
   articles: Article[];   // papers to compare (up to ~4 look good)
   onClose: () => void;
+  cachedComparison?: PaperComparison;
+  onComparisonLoaded?: (comparison: PaperComparison) => void;
 }
 
 // Render one comparison-table cell, formatting by field type: keyFindings ->
@@ -64,7 +66,7 @@ function renderCell(article: Article, key: string) {
   return <span className="text-sm text-slate-700">{String(value ?? '—')}</span>;
 }
 
-export default function ComparisonModal({ articles, onClose }: ComparisonModalProps) {
+export default function ComparisonModal({ articles, onClose, cachedComparison, onComparisonLoaded }: ComparisonModalProps) {
   const { t, language } = useLanguage();
   const aiInsights = [
     {
@@ -107,18 +109,31 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
   const [comparisonError, setComparisonError] = useState(false);
 
   useEffect(() => {
+    if (cachedComparison) {
+      setComparison(cachedComparison);
+      setComparisonLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setComparisonLoading(true);
     setComparisonError(false);
     comparePapersByCriteria(articles.map((a) => a.id), language)
-      .then((result) => { if (!cancelled) setComparison(result); })
+      .then((result) => {
+        if (!cancelled) {
+          setComparison(result);
+          if (onComparisonLoaded) {
+            onComparisonLoaded(result);
+          }
+        }
+      })
       .catch((error) => {
         console.error('AI comparison failed:', error);
         if (!cancelled) setComparisonError(true);
       })
       .finally(() => { if (!cancelled) setComparisonLoading(false); });
     return () => { cancelled = true; };
-  }, [articles, language]);
+  }, [articles, language, cachedComparison, onComparisonLoaded]);
 
   const scoresFor = (articleId: string) =>
     comparison?.papers.find((p) => p.paperId === articleId)?.scores;
@@ -231,7 +246,7 @@ export default function ComparisonModal({ articles, onClose }: ComparisonModalPr
         )}
 
         {/* Content */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden">
+        <div className="flex-1 overflow-y-auto min-w-0 min-h-0 relative">
 
           {/* ═══ Visual Comparison Metrics (real AI scores) ═══ */}
           <div className="px-6 pt-5 pb-4 space-y-5">

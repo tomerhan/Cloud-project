@@ -3,6 +3,8 @@
 
 const KEY = 'analyzed_reports_v1';
 
+import { PaperComparison } from '../app/services/paperService';
+
 export interface AnalysisReport {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface AnalysisReport {
   createdAt: string;
   analysisDate: string;
   depth: 'Fast' | 'Regular' | 'Deep';
+  comparison?: PaperComparison;
 }
 
 /** Read all saved reports (newest first). Returns [] on any error. */
